@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — The Varsitarian</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="page-wall">
+  <header class="masthead">
+    <div class="masthead-inner">
+      <!-- Left: brand -->
+      <div class="masthead-left">
+        <span class="logo-pen" aria-hidden="true">
+          <img src="/images/fist-logo.png" alt="" width="44" height="44" />
+        </span>
+        <div class="masthead-brand">
+          <div class="masthead-brand-text">
+            <span class="masthead-title">The Varsitarian</span>
+            <span class="masthead-sub">The official student publication of the University of Bohol</span>
+          </div>
+        </div>
+      </div>
+      <!-- Right: nav, bell, avatar, hamburger -->
+      <div class="masthead-right">
+        <nav class="masthead-nav">
+          <a href="/wall">Home</a>
+          <a href="/freedom-wall">VarsiVoice</a>
+          <a href="/writers">Writer's Hub</a>
+        </nav>
+        <div class="notif-wrap">
+          <button type="button" id="notif-btn" class="icon-btn masthead-bell" aria-label="Notifications">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            <span id="notif-badge" class="notif-badge hidden">0</span>
+          </button>
+          <div id="notif-panel" class="notif-panel hidden" role="dialog" aria-label="Notifications">
+            <div class="notif-panel-header">
+              <span class="notif-panel-title">Notifications</span>
+              <button type="button" id="notif-mark-all" class="notif-mark-all">Mark all read</button>
+            </div>
+            <div id="notif-list" class="notif-list">
+              <p class="notif-empty">No notifications yet.</p>
+            </div>
+          </div>
+        </div>
+        <a id="header-avatar-link" href="#" class="avatar-ring-link" aria-label="My profile">
+          <img id="header-avatar" class="avatar-ring" alt="Profile" />
+        </a>
+        <div class="hamburger-wrap">
+          <button type="button" id="hamburger-btn" class="icon-btn hamburger-btn" aria-label="Menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          </button>
+          <div id="hamburger-menu" class="hamburger-menu hidden" role="menu">
+              <div class="hamburger-submenu-label">Appearance</div>
+              <button type="button" id="theme-light-btn" class="hamburger-theme-btn active" aria-pressed="true">☀️ Light mode</button>
+              <button type="button" id="theme-dark-btn" class="hamburger-theme-btn" aria-pressed="false">🌙 Dark mode</button>
+              <div class="hamburger-divider"></div>
+              <a href="/admin" id="admin-panel-item" class="hamburger-menu-item" role="menuitem">🛡️ Admin Panel</a>
+            <div class="hamburger-divider"></div>
+            <button type="button" id="btn-logout" class="hamburger-menu-item hamburger-logout" role="menuitem">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <!-- Sticky sidebar nav -->
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-inner">
+        <div class="admin-sidebar-header">
+          <h2 class="admin-sidebar-title">🛡️ Admin Panel</h2>
+          <p class="admin-sidebar-role" id="admin-role-label"></p>
+        </div>
+        <nav class="admin-sidenav" role="navigation" aria-label="Admin sections">
+          <button type="button" class="admin-sidenav-item active" id="sidenav-submissions" data-tab="tab-submissions">
+            <span class="admin-sidenav-icon">📝</span>
+            <span>Pending Submissions</span>
+          </button>
+          <button type="button" class="admin-sidenav-item" id="sidenav-approved" data-tab="tab-approved">
+            <span class="admin-sidenav-icon">✅</span>
+            <span>Approved Submissions</span>
+          </button>
+          <button type="button" class="admin-sidenav-item" id="sidenav-reports" data-tab="tab-reports">
+            <span class="admin-sidenav-icon">🚩</span>
+            <span>Reports</span>
+          </button>
+          <button type="button" class="admin-sidenav-item" id="sidenav-restrictions" data-tab="tab-restrictions">
+            <span class="admin-sidenav-icon">⏳</span>
+            <span>User Restrictions</span>
+          </button>
+          <button type="button" class="admin-sidenav-item" id="sidenav-users" data-tab="tab-users">
+            <span class="admin-sidenav-icon">🛡️</span>
+            <span>Manage Admins</span>
+          </button>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="admin-main">
+      <!-- Submissions section -->
+      <section class="admin-section active" id="section-submissions" role="tabpanel">
+        <div class="admin-section-toolbar">
+          <h2 class="admin-section-heading">📝 Pending Submissions</h2>
+          <div class="admin-sort-wrap">
+            <label class="admin-sort-label" for="submissions-sort">Sort:</label>
+            <select id="submissions-sort" class="admin-sort-select">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </div>
+        </div>
+        <p class="admin-section-status" id="submissions-status">Loading…</p>
+        <div id="submissions-list" class="admin-list"></div>
+      </section>
+
+      <!-- Approved Submissions section -->
+      <section class="admin-section" id="section-approved" role="tabpanel">
+        <div class="admin-section-toolbar">
+          <h2 class="admin-section-heading">✅ Approved Submissions</h2>
+          <div class="admin-sort-wrap">
+            <label class="admin-sort-label" for="approved-sort">Sort:</label>
+            <select id="approved-sort" class="admin-sort-select">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </div>
+        </div>
+        <p class="admin-section-status" id="approved-status">Loading…</p>
+        <div id="approved-list" class="admin-list"></div>
+      </section>
+
+      <!-- Reports section -->
+      <section class="admin-section" id="section-reports" role="tabpanel">
+        <div class="admin-section-toolbar">
+          <h2 class="admin-section-heading">🚩 Reports</h2>
+          <div class="admin-controls">
+            <div class="admin-sort-wrap">
+              <label class="admin-sort-label" for="reports-filter">Filter:</label>
+              <select id="reports-filter" class="admin-sort-select">
+                <option value="all">All Reports</option>
+                <option value="spam">Spam</option>
+                <option value="harassment">Harassment</option>
+                <option value="inappropriate">Inappropriate</option>
+                <option value="bullying">Bullying</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="admin-sort-wrap">
+              <label class="admin-sort-label" for="reports-sort">Sort:</label>
+              <select id="reports-sort" class="admin-sort-select">
+                <option value="count_desc">Most Reported</option>
+                <option value="count_asc">Least Reported</option>
+                <option value="newest">Newest Reports</option>
+                <option value="oldest">Oldest Reports</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <p class="admin-section-status" id="reports-status">Loading…</p>
+        <div id="reports-list" class="admin-list"></div>
+      </section>
+
+      <!-- Restrictions section -->
+      <section class="admin-section" id="section-restrictions" role="tabpanel">
+        <div class="admin-section-toolbar">
+          <h2 class="admin-section-heading">⏳ User Restrictions</h2>
+          <div class="admin-controls">
+            <div class="admin-sort-wrap">
+              <label class="admin-sort-label" for="restrictions-filter">Filter:</label>
+              <select id="restrictions-filter" class="admin-sort-select">
+                <option value="all">All Restrictions</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
+            </div>
+            <div class="admin-sort-wrap">
+              <label class="admin-sort-label" for="restrictions-sort">Sort:</label>
+              <select id="restrictions-sort" class="admin-sort-select">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="ending_soon">Ending Soon</option>
+              </select>
+            </div>
+            <button type="button" id="btn-create-restriction" class="btn-sm" style="background:#dc2626;color:white;border-color:#dc2626;">Create Restriction</button>
+          </div>
+        </div>
+        <div class="admin-search-bar">
+          <input type="search" id="restrictions-search" class="admin-search-input" placeholder="Search by user name or ID…" autocomplete="off" />
+        </div>
+        <p class="admin-section-status" id="restrictions-status">Loading…</p>
+        <div id="restrictions-list" class="admin-list"></div>
+      </section>
+
+      <!-- Users section -->
+      <section class="admin-section" id="section-users" role="tabpanel">
+        <div class="admin-section-toolbar">
+          <h2 class="admin-section-heading">🛡️ Manage Admins</h2>
+        </div>
+        <div class="admin-search-bar">
+          <input type="search" id="users-search" class="admin-search-input" placeholder="Search by name or user ID…" autocomplete="off" />
+        </div>
+        <p class="admin-section-status" id="users-status">Loading…</p>
+        <div id="users-list" class="admin-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Post viewer modal (for reported posts) -->
+  <div id="admin-post-modal" class="post-modal hidden" aria-hidden="true">
+    <div class="post-modal-inner">
+      <button type="button" id="admin-post-modal-close" class="post-modal-close" aria-label="Close">✕</button>
+      <div id="admin-post-modal-content" class="post-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Restriction creation modal -->
+  <div id="restriction-modal" class="action-modal hidden" aria-hidden="true">
+    <div class="restriction-modal-card">
+      <div class="restriction-modal-header">
+        <h3 class="restriction-modal-title">Create User Restriction</h3>
+        <button type="button" class="ep-close-btn" id="restriction-modal-close">✕</button>
+      </div>
+      <div class="restriction-modal-body">
+        <div class="restriction-modal-field">
+          <label class="restriction-modal-label" for="restriction-user-search">User:</label>
+          <input type="text" id="restriction-user-search" class="restriction-modal-input" placeholder="Search by name or user ID..." autocomplete="off" />
+          <div id="restriction-user-results" class="restriction-user-results hidden"></div>
+          <input type="hidden" id="restriction-selected-user-id" />
+        </div>
+        <div class="restriction-modal-field">
+          <label class="restriction-modal-label" for="restriction-duration">Duration:</label>
+          <select id="restriction-duration" class="restriction-modal-select">
+            <option value="1">1 Day</option>
+            <option value="7">1 Week</option>
+            <option value="14">2 Weeks</option>
+            <option value="30">1 Month</option>
+            <option value="90">3 Months</option>
+            <option value="custom">Custom...</option>
+          </select>
+        </div>
+        <div class="restriction-modal-field hidden" id="restriction-custom-duration-field">
+          <label class="restriction-modal-label" for="restriction-custom-days">Custom Duration (days):</label>
+          <input type="number" id="restriction-custom-days" class="restriction-modal-input" min="1" max="365" placeholder="Enter days..." />
+        </div>
+        <div class="restriction-modal-field">
+          <label class="restriction-modal-label" for="restriction-reason">Reason:</label>
+          <textarea id="restriction-reason" class="restriction-modal-textarea" rows="3" placeholder="Enter reason for restriction..." required></textarea>
+        </div>
+      </div>
+      <div class="restriction-modal-footer">
+        <p id="restriction-modal-error" class="error-msg hidden"></p>
+        <div class="restriction-modal-actions">
+          <button type="button" id="restriction-modal-cancel" class="btn-sm">Cancel</button>
+          <button type="button" id="restriction-modal-create" class="btn-sm" style="background:#dc2626;color:white;border-color:#dc2626;">Create Restriction</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restriction details modal -->
+  <div id="restriction-details-modal" class="action-modal hidden" aria-hidden="true">
+    <div class="restriction-details-modal-card">
+      <div class="restriction-modal-header">
+        <h3 class="restriction-modal-title">Restriction Details</h3>
+        <button type="button" class="ep-close-btn" id="restriction-details-modal-close">✕</button>
+      </div>
+      <div class="restriction-modal-body" id="restriction-details-content">
+        <!-- Content will be populated dynamically -->
+      </div>
+      <div class="restriction-modal-footer">
+        <p id="restriction-details-modal-error" class="error-msg hidden"></p>
+        <div class="restriction-modal-actions" id="restriction-details-actions">
+          <!-- Actions will be populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation modal (reuses existing action-modal pattern) -->
+  <div id="action-modal" class="action-modal hidden" aria-hidden="true">
+    <div class="action-modal-card comment">
+      <h4 id="action-modal-title" class="trending-title">Confirm</h4>
+      <p id="action-modal-message" class="hint"></p>
+      <textarea id="action-modal-input" class="composer-textarea hidden" rows="4"></textarea>
+      <p id="action-modal-error" class="error-msg hidden"></p>
+      <div class="action-modal-actions">
+        <button type="button" id="action-modal-cancel" class="owner-menu-item">Cancel</button>
+        <button type="button" id="action-modal-confirm" class="btn-sm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/notif.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

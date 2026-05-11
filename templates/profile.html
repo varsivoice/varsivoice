@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — VarsiVoice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="page-wall">
+  <header class="masthead">
+    <div class="masthead-inner">
+      <!-- Left: brand -->
+      <div class="masthead-left">
+        <span class="logo-pen" aria-hidden="true">
+          <img src="/images/fist-logo.png" alt="" width="44" height="44" />
+        </span>
+        <div class="masthead-brand">
+          <div class="masthead-brand-text">
+            <span class="masthead-title">The Varsitarian</span>
+            <span class="masthead-sub">The official student publication of the University of Bohol</span>
+          </div>
+        </div>
+      </div>
+      <!-- Right: nav, bell, avatar, hamburger -->
+      <div class="masthead-right">
+        <nav class="masthead-nav">
+          <a href="/wall">Home</a>
+          <a href="/freedom-wall">VarsiVoice</a>
+          <a href="/writers">Writer's Hub</a>
+        </nav>
+        <div class="notif-wrap">
+          <button type="button" id="notif-btn" class="icon-btn masthead-bell" aria-label="Notifications">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            <span id="notif-badge" class="notif-badge hidden">0</span>
+          </button>
+          <div id="notif-panel" class="notif-panel hidden" role="dialog" aria-label="Notifications">
+            <div class="notif-panel-header">
+              <span class="notif-panel-title">Notifications</span>
+              <button type="button" id="notif-mark-all" class="notif-mark-all">Mark all read</button>
+            </div>
+            <div id="notif-list" class="notif-list">
+              <p class="notif-empty">No notifications yet.</p>
+            </div>
+          </div>
+        </div>
+        <a id="header-avatar-link" href="#" class="avatar-ring-link" aria-label="My profile">
+          <img id="header-avatar" class="avatar-ring" alt="Profile" />
+        </a>
+        <div class="hamburger-wrap">
+          <button type="button" id="hamburger-btn" class="icon-btn hamburger-btn" aria-label="Menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          </button>
+          <div id="hamburger-menu" class="hamburger-menu hidden" role="menu">
+              <div class="hamburger-submenu-label">Appearance</div>
+              <button type="button" id="theme-light-btn" class="hamburger-theme-btn active" aria-pressed="true">☀️ Light mode</button>
+              <button type="button" id="theme-dark-btn" class="hamburger-theme-btn" aria-pressed="false">🌙 Dark mode</button>
+              <div class="hamburger-divider"></div>
+              <a href="/admin" id="admin-panel-item" class="hamburger-menu-item hidden" role="menuitem">🛡️ Admin Panel</a>
+            <div class="hamburger-divider"></div>
+            <button type="button" id="btn-logout" class="hamburger-menu-item hamburger-logout" role="menuitem">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero-banner" aria-label="Banner" style="background-image: url('/images/project-luma-shaders-sun-cubic.jpg'); background-size: cover; background-position: center;">
+    <div class="hero-overlay"></div>
+  </section>
+
+  <div class="feed-layout">
+    <div class="feed-main">
+      <!-- Profile card -->
+      <section class="card profile-hero-card">
+        <div class="profile-hero">
+          <div id="profile-avatar" class="profile-avatar-square no-image">U</div>
+          <div class="profile-hero-info">
+            <h1 id="profile-name-title" class="profile-hero-name">Profile</h1>
+            <p id="profile-created-at" class="profile-hero-joined"></p>
+            <!-- Own profile: edit button shown by JS -->
+            <div id="profile-own-actions" class="hidden"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Posts -->
+      <div class="profile-posts-header">
+        <h2 class="profile-posts-title">Posts</h2>
+        <div class="profile-filter-controls">
+          <select id="profile-category-filter" class="profile-filter-select">
+            <option value="">All Categories</option>
+            <option value="Feature Article">Feature Article</option>
+            <option value="Opinion/Editorial">Opinion/Editorial</option>
+            <option value="News">News</option>
+            <option value="Literary/Creative">Literary/Creative</option>
+            <option value="Sports">Sports</option>
+            <option value="Campus Life">Campus Life</option>
+            <option value="Other">Other</option>
+          </select>
+          <select id="profile-sort-filter" class="profile-filter-select">
+            <option value="latest">Latest</option>
+            <option value="likes">Most Liked</option>
+            <option value="comments">Most Comments</option>
+          </select>
+        </div>
+      </div>
+      <p id="profile-post-status" class="status-msg"></p>
+      <div id="profile-posts" class="feed"></div>
+    </div>
+
+    <aside class="feed-sidebar">
+      <div class="sidebar-cta">
+        <h2 class="sidebar-cta-title">Submit your literary piece</h2>
+        <p class="sidebar-cta-text">Share poems, essays, and other works for the semestral publication.</p>
+        <a href="/writers" class="btn-sidebar-cta">Upload literary piece</a>
+      </div>
+      <div class="card sidebar-trending">
+        <h3 class="trending-title">Trending Posts</h3>
+        <div id="trending-list" class="trending-list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Action modal (for edit/delete on own posts) -->
+  <div id="action-modal" class="action-modal hidden" aria-hidden="true">
+    <div class="action-modal-card comment">
+      <h4 id="action-modal-title" class="trending-title">Confirm</h4>
+      <p id="action-modal-message" class="hint"></p>
+      <textarea id="action-modal-input" class="composer-textarea hidden" rows="4"></textarea>
+      <p id="action-modal-error" class="error-msg hidden"></p>
+      <div class="action-modal-actions">
+        <button type="button" id="action-modal-cancel" class="owner-menu-item">Cancel</button>
+        <button type="button" id="action-modal-confirm" class="btn-sm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/avatar-color.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/notif.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/restriction-status.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+</body>
+</html>

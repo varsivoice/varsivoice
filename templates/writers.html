@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writer's Hub — University of Bohol</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="page-writers">
+  <header class="masthead">
+    <div class="masthead-inner">
+      <!-- Left: brand -->
+      <div class="masthead-left">
+        <span class="logo-pen" aria-hidden="true">
+          <img src="/images/fist-logo.png" alt="" width="44" height="44" />
+        </span>
+        <div class="masthead-brand">
+          <div class="masthead-brand-text">
+            <span class="masthead-title">The Varsitarian</span>
+            <span class="masthead-sub">The official student publication of the University of Bohol</span>
+          </div>
+        </div>
+      </div>
+      <!-- Right: nav, bell, avatar, hamburger -->
+      <div class="masthead-right">
+        <nav class="masthead-nav">
+          <a href="/wall">Home</a>
+          <a href="/freedom-wall">VarsiVoice</a>
+          <a href="/writers" class="active">Writer's Hub</a>
+        </nav>
+        <div class="notif-wrap">
+          <button type="button" id="notif-btn" class="icon-btn masthead-bell" aria-label="Notifications">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            <span id="notif-badge" class="notif-badge hidden">0</span>
+          </button>
+          <div id="notif-panel" class="notif-panel hidden" role="dialog" aria-label="Notifications">
+            <div class="notif-panel-header">
+              <span class="notif-panel-title">Notifications</span>
+              <button type="button" id="notif-mark-all" class="notif-mark-all">Mark all read</button>
+            </div>
+            <div id="notif-list" class="notif-list">
+              <p class="notif-empty">No notifications yet.</p>
+            </div>
+          </div>
+        </div>
+        <a id="header-avatar-link" href="#" class="avatar-ring-link" aria-label="My profile">
+          <img id="header-avatar" class="avatar-ring" alt="Profile" />
+        </a>
+        <div class="hamburger-wrap">
+          <button type="button" id="hamburger-btn" class="icon-btn hamburger-btn" aria-label="Menu" aria-expanded="false">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          </button>
+          <div id="hamburger-menu" class="hamburger-menu hidden" role="menu">
+              <div class="hamburger-submenu-label">Appearance</div>
+              <button type="button" id="theme-light-btn" class="hamburger-theme-btn active" aria-pressed="true">☀️ Light mode</button>
+              <button type="button" id="theme-dark-btn" class="hamburger-theme-btn" aria-pressed="false">🌙 Dark mode</button>
+              <div class="hamburger-divider"></div>
+              <a href="/admin" id="admin-panel-item" class="hamburger-menu-item hidden" role="menuitem">🛡️ Admin Panel</a>
+            <div class="hamburger-divider"></div>
+            <button type="button" id="btn-logout" class="hamburger-menu-item hamburger-logout" role="menuitem">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero-banner hero-banner--compact" aria-label="Banner">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">Writer's Hub</h1>
+      <p class="hero-tagline">Submit work for the semestral paper</p>
+    </div>
+  </section>
+
+  <main class="writers-layout">
+    <!-- Left: submission form -->
+    <div class="writers-form-col">
+      <section class="card writers-form-card">
+        <button type="button" class="writers-form-toggle" id="form-toggle" aria-expanded="false" aria-controls="submission-form-body">
+          <div class="writers-form-toggle-left">
+            <span class="writers-form-toggle-icon">✒</span>
+            <div>
+              <span class="writers-form-toggle-title">Submit a writeup</span>
+              <span class="writers-form-toggle-sub">Click to expand and start writing</span>
+            </div>
+          </div>
+          <svg class="writers-form-chevron" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+        </button>
+
+        <div id="submission-form-body" class="writers-form-body hidden">
+          <p class="hint" style="margin-top:0.75rem">
+            Include your real name for publication credit. Submissions are stored for publication staff to review.
+          </p>
+          
+          <!-- Submission type choice -->
+          <div class="sub-type-choice" style="margin-bottom: 1.5rem; background: rgba(163,29,29,0.07); border: 2px solid rgba(163,29,29,0.25); border-radius: 12px; padding: 1rem 1.25rem;">
+            <label style="display: block; margin-bottom: 0.75rem; font-weight: 700; font-size: 1rem; color: #fff;">How would you like to submit?</label>
+            <div style="display: flex; gap: 1.5rem;">
+              <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 0.95rem; gap: 0.5rem;">
+                <input type="radio" name="sub-type" value="write" id="sub-type-write" checked />
+                Write in editor
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 0.95rem; gap: 0.5rem;">
+                <input type="radio" name="sub-type" value="upload" id="sub-type-upload" />
+                Upload document
+              </label>
+            </div>
+          </div>
+          
+          <form id="submission-form">
+            <label for="sub-title">Title</label>
+            <input type="text" id="sub-title" required maxlength="500" />
+
+            <label for="sub-category">Category</label>
+            <select id="sub-category">
+              <option>Feature Article</option>
+              <option>Opinion/Editorial</option>
+              <option>News</option>
+              <option>Literary/Creative</option>
+              <option>Sports</option>
+              <option>Campus Life</option>
+            </select>
+
+            <label for="sub-author">Author Name/Pen Name (For Publication)</label>
+            <input type="text" id="sub-author" required />
+
+            <label for="sub-bio">Brief Author Bio (Optional)</label>
+            <textarea id="sub-bio" rows="2" maxlength="500" placeholder="Year & program, or a short line about you"></textarea>
+
+            <div id="editor-section">
+              <label>Content <span style="font-weight:400;opacity:0.6;font-size:0.85rem">(or upload a document below)</span></label>
+              <div class="editor-wrap">
+                <div class="editor-toolbar" id="editor-toolbar">
+                  <button type="button" class="editor-btn" data-cmd="bold" title="Bold"><b>B</b></button>
+                  <button type="button" class="editor-btn" data-cmd="italic" title="Italic"><i>I</i></button>
+                  <button type="button" class="editor-btn" data-cmd="underline" title="Underline"><u>U</u></button>
+                  <div class="editor-divider"></div>
+                  <button type="button" class="editor-btn" data-cmd="justifyLeft" title="Align left">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3zm0 4h12v2H3zm0 4h18v2H3zm0 4h12v2H3zm0 4h18v2H3z"/></svg>
+                  </button>
+                  <button type="button" class="editor-btn" data-cmd="justifyCenter" title="Center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3zm3 4h12v2H6zm-3 4h18v2H3zm3 4h12v2H6zm-3 4h18v2H3z"/></svg>
+                  </button>
+                  <button type="button" class="editor-btn" data-cmd="justifyRight" title="Align right">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3zm6 4h12v2H9zm-6 4h18v2H3zm6 4h12v2H9zm-6 4h18v2H3z"/></svg>
+                  </button>
+                  <button type="button" class="editor-btn" data-cmd="justifyFull" title="Justify">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3zm0 4h18v2H3zm0 4h18v2H3zm0 4h18v2H3zm0 4h18v2H3z"/></svg>
+                  </button>
+                </div>
+                <div id="sub-content-editor" class="editor-body" contenteditable="true" aria-label="Content" aria-multiline="true" role="textbox" data-placeholder="Your article or piece…"></div>
+              </div>
+            </div>
+
+            <p id="sub-error" class="error-msg" hidden></p>
+
+            <div class="sub-doc-upload" id="doc-upload-section">
+              <label class="sub-doc-label" for="sub-document-file">
+                📎 Attach a document <span class="sub-doc-hint">(PDF, Word, ODT, TXT — max 20 MB)</span>
+              </label>
+              <div class="sub-doc-row">
+                <input type="file" id="sub-document-file" accept=".pdf,.doc,.docx,.odt,.txt" class="hidden" />
+                <button type="button" id="sub-doc-btn" class="btn-sm btn-sm--outline">Choose file</button>
+                <span id="sub-document-label" class="sub-doc-filename">No file chosen</span>
+                <button type="button" id="sub-doc-clear" class="sub-doc-clear hidden" aria-label="Remove file">✕</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-post-pill btn-post-pill--wide">Submit for review</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="card writers-list-card">
+        <h3 class="section-title-serif">Your submissions</h3>
+        <p class="hint">Only your own submissions are shown here.</p>
+        <p id="writers-status" class="status-msg"></p>
+        <div id="submissions-list" class="submissions-list"></div>
+      </section>
+    </div>
+
+    <!-- Right: public writeups feed -->
+    <aside class="writers-feed-col">
+      <div class="card writers-feed-card">
+        <h3 class="section-title-serif">📰 Published Writeups</h3>
+        <p class="hint" style="margin-top:0">Recent submissions from the community.</p>
+        <p id="feed-status" class="status-msg"></p>
+        <div id="writeups-feed" class="writeups-feed"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/avatar-color.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/notif.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/restriction-status.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/writers.js') }}"></script>
+</body>
+</html>

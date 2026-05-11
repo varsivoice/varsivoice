@@ -1,0 +1,26 @@
+University of Bohol — Freedom Wall (demo)
+
+WHAT'S INCLUDED
+- Login page (HTML): app accounts with Log In / Sign Up, profile editing, and profile photo upload.
+- Freedom Wall + Writer's Hub: Flask (Python) + MySQL for posts, comments, likes, and publication submissions.
+
+REQUIREMENTS
+- Python 3.10+ with pip
+- MySQL Server (local or remote) and a user that can create databases
+
+QUICK START
+1. Copy .env.example to .env and set MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE (default name: ub_freedom_wall).
+   Optional: set DEFAULT_PROFILE_IMAGES as comma-separated image URLs for randomized default avatars.
+
+2. Install dependencies:
+   pip install -r requirements.txt
+
+3. Start the app (creates the database and tables if missing):
+   python app.py
+
+4. Open http://127.0.0.1:5000 — create an account or log in, then use the Freedom Wall and Writer's Hub.
+
+OPTIONAL: You can also create the schema manually with:
+   mysql -u root -p < database.sql
+
+Writer's Hub lists only submission IDs stored in this browser after a successful submit (demo until real auth exists).

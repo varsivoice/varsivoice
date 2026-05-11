@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log in — VarsiVoice · University of Bohol</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="page-login">
+  <div class="login-backdrop" aria-hidden="true"></div>
+
+  <div class="login-center">
+    <div class="login-card-glass">
+      <div class="login-brand">
+        <span class="login-logo" aria-hidden="true">
+          <img src="/images/fist-logo.png" alt="" width="40" height="40" />
+        </span>
+        <div class="login-brand-text">
+          <span class="login-masthead">VarsiVoice</span>
+          <span class="login-masthead-sub">University of Bohol</span>
+        </div>
+      </div>
+
+      <h1 class="login-welcome">Welcome</h1>
+      <p class="login-lead">Choose to log in or sign up for your account.</p>
+
+      <form id="login-form" novalidate>
+        <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+          <button type="button" id="tab-login" class="btn-signup-outline auth-tab active">Log In</button>
+          <button type="button" id="tab-signup" class="btn-signup-outline auth-tab">Sign Up</button>
+        </div>
+        <div id="signup-name-wrap" class="field-icon-wrap hidden">
+          <span class="field-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          </span>
+          <input type="text" id="display-name" name="display_name" class="field-input" placeholder="Display name" />
+        </div>
+        <div class="field-icon-wrap">
+          <span class="field-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          </span>
+          <input type="email" id="email" name="email" class="field-input" placeholder="Email address" autocomplete="username" required />
+        </div>
+        <div class="field-icon-wrap">
+          <span class="field-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <input type="password" id="password" name="password" class="field-input" placeholder="Password" autocomplete="current-password" required />
+        </div>
+        <p id="login-error" class="error-msg" hidden></p>
+        <button type="submit" class="btn-login-gradient" id="submit-auth-btn">Log In</button>
+      </form>
+
+      <p class="signup-line">
+        <a href="#" id="privacy-link" class="privacy-link">Privacy & Safety Commitment</a>
+      </p>
+    </div>
+
+    <p class="login-footnote">
+      Your posts are shown in the feed with your chosen profile.
+    </p>
+  </div>
+
+  <!-- Privacy Modal -->
+  <div id="privacy-modal" class="privacy-modal hidden" aria-hidden="true">
+    <div class="privacy-modal-overlay"></div>
+    <div class="privacy-modal-content">
+      <div class="privacy-modal-header">
+        <h3 class="privacy-modal-title">Privacy & Safety Commitment</h3>
+        <button type="button" id="privacy-modal-close" class="privacy-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="privacy-modal-body">
+        <div class="privacy-section">
+          <h4>Data Protection</h4>
+          <p>We are committed to protecting your privacy and maintaining a safe environment. Your personal information is handled with strict confidentiality and security measures.</p>
+        </div>
+        
+        <div class="privacy-section">
+          <h4>Non-Disclosure Policy</h4>
+          <p>Our administrators and moderators will not disclose your personal information, private communications, or account details to third parties without your explicit consent or legal requirement.</p>
+        </div>
+        
+        <div class="privacy-section">
+          <h4>Data Usage</h4>
+          <p>Your data is used solely for platform moderation, improvement purposes, and providing you with the best possible experience. We do not sell or share your information for commercial purposes.</p>
+        </div>
+        
+        <div class="privacy-section">
+          <h4>Safe Environment</h4>
+          <p>We maintain a zero-tolerance policy for harassment, bullying, and inappropriate content. Our moderation team works to ensure a respectful community for all users.</p>
+        </div>
+        
+        <div class="privacy-section">
+          <h4>Contact & Support</h4>
+          <p>If you have any privacy concerns or questions about how your data is handled, please contact our support team. We are committed to transparency and addressing your concerns promptly.</p>
+        </div>
+      </div>
+      <div class="privacy-modal-footer">
+        <button type="button" id="privacy-modal-ok" class="btn-login-gradient">I Understand</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

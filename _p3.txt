@@ -1,0 +1,62 @@
+  // ---- Action Modal ----
+  function closeActionModal() {
+    actionModal.classList.add('hidden');
+    actionModal.setAttribute('aria-hidden', 'true');
+    actionModalError.textContent = '';
+    actionModalError.classList.add('hidden');
+    modalConfirmHandler = null;
+  }
+
+  function openActionModal(config) {
+    actionModalTitle.textContent = config.title || 'Confirm';
+    actionModalMessage.textContent = config.message || '';
+    actionModalInput.classList.toggle('hidden', !config.showInput);
+    actionModalInput.value = config.initialValue || '';
+    actionModalError.textContent = '';
+    actionModalError.classList.add('hidden');
+    actionModalConfirm.textContent = config.confirmText || 'Confirm';
+    actionModalConfirm.classList.toggle('btn-danger', !!config.danger);
+    actionModal.classList.remove('hidden');
+    actionModal.setAttribute('aria-hidden', 'false');
+    modalConfirmHandler = config.onConfirm || null;
+    if (config.showInput) actionModalInput.focus();
+  }
+
+  actionModalCancel.addEventListener('click', closeActionModal);
+  actionModal.addEventListener('click', function (e) {
+    if (e.target === actionModal) closeActionModal();
+  });
+  var actionModalCard = document.querySelector('.action-modal-card');
+  if (actionModalCard) actionModalCard.addEventListener('click', function (e) { e.stopPropagation(); });
+  actionModalConfirm.addEventListener('click', function () {
+    if (!modalConfirmHandler) { closeActionModal(); return; }
+    modalConfirmHandler({
+      value: (actionModalInput.value || '').trim(),
+      setError: function (msg) {
+        actionModalError.textContent = msg || '';
+        actionModalError.classList.toggle('hidden', !msg);
+      },
+      close: closeActionModal
+    });
+  });
+
+  // ---- Owner menu ----
+  function bindOwnerMenu(container) {
+    var trigger = container.querySelector('.owner-menu-trigger');
+    var menu = container.querySelector('.owner-menu-list');
+    if (!trigger || !menu) return;
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      menu.classList.toggle('hidden');
+    });
+    document.addEventListener('click', function () { menu.classList.add('hidden'); });
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+
+  // ---- Enter to submit ----
+  function bindEnterToSubmit(textareaEl, submitFn) {
+    if (!textareaEl) return;
+    textareaEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitFn(); }
+    });
+  }
