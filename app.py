@@ -829,38 +829,7 @@ def delete_post(post_id):
 
 @app.route("/api/auth/send-verification", methods=["POST"])
 def send_verification():
-    """Step 1: validate inputs, skip email for now (email disabled)."""
-    data = request.get_json(force=True, silent=True) or {}
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password") or ""
-    display_name = (data.get("display_name") or "").strip()
-
-    if not email or "@" not in email or "." not in email.split("@")[-1]:
-        return jsonify({"error": "Please provide a valid email address."}), 400
-    if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters."}), 400
-    if not display_name:
-        return jsonify({"error": "Display name is required."}), 400
-    if len(display_name) > 120:
-        return jsonify({"error": "Display name is too long."}), 400
-
-    conn = get_conn()
-    try:
-        if conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
-            return jsonify({"error": "This email is already registered."}), 409
-    finally:
-        conn.close()
-
-    # Email verification disabled - auto-generate code
-    code = "000000"
-    _pending_verifications[email] = {
-        "code": code,
-        "expires": time.time() + VERIFY_CODE_TTL,
-        "password": password,
-        "display_name": display_name,
-    }
-
-    # Skip email sending - just return success
+    """Email verification disabled - return success immediately."""
     return jsonify({"ok": True, "message": "Ready to verify. Use code: 000000"})
 
 
