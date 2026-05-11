@@ -3017,6 +3017,53 @@ def admin_transfer_ownership():
         conn.close()
 
 
+# --- Admin: Change Admin by Email (for setup) ---
+
+@app.route("/api/admin/change-admin-by-email", methods=["POST"])
+def change_admin_by_email():
+    """Change admin role from one user to another by email (setup endpoint)."""
+    data = request.get_json(force=True, silent=True) or {}
+    old_admin_email = (data.get("old_admin_email") or "").strip().lower()
+    new_admin_email = (data.get("new_admin_email") or "").strip().lower()
+    
+    if not old_admin_email or not new_admin_email:
+        return jsonify({"error": "Both old_admin_email and new_admin_email are required."}), 400
+    
+    conn = get_conn()
+    try:
+        # Find old admin
+        old_admin = conn.execute(
+            "SELECT id, display_name, role FROM users WHERE email = ?",
+            (old_admin_email,)
+        ).fetchone()
+        
+        if not old_admin:
+            return jsonify({"error": f"User with email {old_admin_email} not found."}), 404
+        
+        # Find new admin
+        new_admin = conn.execute(
+            "SELECT id, display_name, role FROM users WHERE email = ?",
+            (new_admin_email,)
+        ).fetchone()
+        
+        if not new_admin:
+            return jsonify({"error": f"User with email {new_admin_email} not found."}), 404
+        
+        # Update roles
+        conn.execute("UPDATE users SET role = 'user' WHERE id = ?", (old_admin["id"],))
+        conn.execute("UPDATE users SET role = 'main_admin' WHERE id = ?", (new_admin["id"],))
+        conn.commit()
+        
+        return jsonify({
+            "ok": True,
+            "message": f"Admin changed from {old_admin['display_name']} to {new_admin['display_name']}",
+            "old_admin": {"id": old_admin["id"], "email": old_admin_email, "role": "user"},
+            "new_admin": {"id": new_admin["id"], "email": new_admin_email, "role": "main_admin"}
+        })
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     init_db()
     app.run(debug=True, port=5000)

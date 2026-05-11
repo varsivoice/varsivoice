@@ -7034,3 +7034,411 @@ a.hamburger-menu-item:hover {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.7);
 }
+
+
+/* ========== MOBILE RESPONSIVE FIXES (DO NOT MODIFY DESKTOP) ========== */
+
+/* Mobile: Hide sidebar on screens smaller than 900px */
+@media (max-width: 900px) {
+  .feed-sidebar {
+    display: none !important;
+  }
+  
+  .feed-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+}
+
+/* Mobile: Extra small screens (< 640px) */
+@media (max-width: 640px) {
+  /* Masthead adjustments */
+  .masthead-inner {
+    padding: 0.5rem 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .masthead-brand-text {
+    display: none;
+  }
+  
+  .masthead-nav {
+    display: none;
+  }
+  
+  .masthead-right {
+    gap: 0.4rem;
+  }
+  
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  /* Hero banner */
+  .hero-banner {
+    min-height: 140px;
+  }
+  
+  .hero-banner--compact {
+    min-height: 100px;
+  }
+  
+  .hero-content {
+    padding: 1rem 0.5rem 0.75rem;
+  }
+  
+  .hero-title {
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+  }
+  
+  .hero-tagline {
+    font-size: 0.85rem;
+  }
+  
+  /* Feed layout */
+  .feed-layout {
+    padding: 1rem 0.5rem 2rem;
+    gap: 0.75rem;
+  }
+  
+  /* Cards */
+  .card {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
+  /* Composer */
+  .composer-head {
+    gap: 0.5rem;
+  }
+  
+  .composer-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .composer-textarea {
+    min-height: 80px;
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+  
+  .composer-toolbar {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+  
+  .composer-tools {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .btn-post-pill {
+    width: 100%;
+    padding: 0.65rem;
+  }
+  
+  /* Posts */
+  .post-card {
+    padding: 1rem;
+  }
+  
+  .post-card-top {
+    gap: 0.35rem;
+  }
+  
+  .post-avatar-sm {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .post-anon-name {
+    font-size: 0.88rem;
+  }
+  
+  .post-body {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  .post-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .post-actions button {
+    flex: 1;
+    min-width: 80px;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.6rem;
+  }
+  
+  /* Comments */
+  .comment {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.85rem;
+  }
+  
+  .comment-avatar {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .comment-form textarea {
+    min-height: 56px;
+    font-size: 0.85rem;
+    padding: 0.4rem;
+  }
+  
+  /* Toolbar */
+  .toolbar-card .toolbar-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .input-grow {
+    width: 100%;
+  }
+  
+  .input-search {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+  }
+  
+  .composer-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  /* Sidebar CTA */
+  .sidebar-cta {
+    padding: 0.85rem;
+  }
+  
+  .sidebar-cta-title {
+    font-size: 0.95rem;
+  }
+  
+  .sidebar-cta-text {
+    font-size: 0.78rem;
+  }
+  
+  .btn-sidebar-cta {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.85rem;
+  }
+  
+  /* Trending */
+  .trending-title {
+    font-size: 0.9rem;
+  }
+  
+  .trending-item {
+    padding: 0.5rem 0;
+    font-size: 0.78rem;
+  }
+  
+  .trending-av {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .trending-text strong {
+    font-size: 0.75rem;
+  }
+  
+  .trending-snippet {
+    font-size: 0.72rem;
+  }
+  
+  .trending-meta {
+    font-size: 0.68rem;
+  }
+  
+  /* Profile page */
+  .profile-card .input-search {
+    margin-bottom: 0.5rem;
+  }
+  
+  .default-profile-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+  
+  /* Writers page */
+  .writers-layout {
+    grid-template-columns: 1fr;
+    padding: 1rem 0.5rem 2rem;
+    gap: 1rem;
+  }
+  
+  .writers-feed-col {
+    position: static;
+  }
+  
+  .writers-feed-card {
+    max-height: none;
+  }
+  
+  .writeup-card {
+    padding: 0.85rem;
+  }
+  
+  .writeup-title {
+    font-size: 0.95rem;
+  }
+  
+  .writeup-preview {
+    font-size: 0.8rem;
+  }
+  
+  .writeup-author {
+    font-size: 0.75rem;
+  }
+  
+  /* Admin page */
+  .admin-layout {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .admin-sidebar {
+    position: static;
+    max-height: none;
+    width: 100%;
+  }
+  
+  .admin-main {
+    width: 100%;
+  }
+  
+  /* Modals */
+  .privacy-modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+  }
+  
+  .privacy-modal-body {
+    max-height: 60vh;
+  }
+  
+  .action-modal-card {
+    max-width: 90vw;
+    padding: 1rem;
+  }
+  
+  /* Buttons */
+  .btn-login-gradient {
+    padding: 0.75rem 0.9rem;
+    font-size: 0.95rem;
+  }
+  
+  .btn-signup-outline {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Text sizing */
+  .login-welcome {
+    font-size: 1.25rem;
+  }
+  
+  .login-lead {
+    font-size: 0.85rem;
+  }
+  
+  .field-input {
+    font-size: 0.9rem;
+  }
+  
+  /* Spacing */
+  body {
+    line-height: 1.5;
+  }
+  
+  .card {
+    margin-bottom: 0.75rem;
+  }
+  
+  .post-card {
+    margin-bottom: 0;
+  }
+}
+
+/* Mobile: Medium screens (640px - 900px) */
+@media (min-width: 641px) and (max-width: 900px) {
+  .feed-sidebar {
+    display: none !important;
+  }
+  
+  .feed-layout {
+    grid-template-columns: 1fr;
+    padding: 1.25rem 0.75rem 2.5rem;
+  }
+  
+  .masthead-nav {
+    gap: 0.5rem;
+  }
+  
+  .masthead-nav a {
+    font-size: 0.85rem;
+  }
+  
+  .card {
+    padding: 1.1rem;
+  }
+  
+  .post-card {
+    padding: 1rem;
+  }
+  
+  .composer-textarea {
+    min-height: 84px;
+  }
+  
+  .btn-post-pill {
+    width: 100%;
+  }
+  
+  .post-actions button {
+    flex: 1;
+    min-width: 70px;
+  }
+  
+  .writers-layout {
+    grid-template-columns: 1fr;
+    padding: 1.25rem 0.75rem 2.5rem;
+  }
+  
+  .writers-feed-col {
+    position: static;
+  }
+}
+
+/* Ensure sidebar is completely hidden on mobile */
+@media (max-width: 900px) {
+  .feed-sidebar,
+  .sidebar-cta,
+  .sidebar-trending {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+@media (max-width: 640px) {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+  
+  .feed-layout,
+  .writers-layout,
+  .admin-layout {
+    width: 100%;
+    overflow-x: hidden;
+  }
+}
