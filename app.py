@@ -829,7 +829,7 @@ def delete_post(post_id):
 
 @app.route("/api/auth/send-verification", methods=["POST"])
 def send_verification():
-    """Step 1: validate inputs, send 6-digit code to email."""
+    """Step 1: validate inputs, skip email for now (email disabled)."""
     data = request.get_json(force=True, silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
@@ -851,8 +851,8 @@ def send_verification():
     finally:
         conn.close()
 
-    # Generate 6-digit code
-    code = str(random.randint(100000, 999999))
+    # Email verification disabled - auto-generate code
+    code = "000000"
     _pending_verifications[email] = {
         "code": code,
         "expires": time.time() + VERIFY_CODE_TTL,
@@ -860,12 +860,8 @@ def send_verification():
         "display_name": display_name,
     }
 
-    try:
-        send_verification_email(email, code)
-    except Exception as e:
-        return jsonify({"error": f"Could not send email: {str(e)}"}), 500
-
-    return jsonify({"ok": True, "message": "Verification code sent."})
+    # Skip email sending - just return success
+    return jsonify({"ok": True, "message": "Ready to verify. Use code: 000000"})
 
 
 @app.route("/api/auth/verify-and-signup", methods=["POST"])
