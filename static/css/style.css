@@ -3096,7 +3096,21 @@ a:hover {
 .masthead-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
+}
+
+.masthead-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #fff;
+  text-decoration: none;
+}
+.masthead-brand-link:hover {
+  text-decoration: none;
+}
+.masthead-brand-link:hover .masthead-title {
+  text-decoration: underline;
 }
 
 /* Image button outline variant */
@@ -4612,14 +4626,14 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
   position: absolute;
   top: 0.45rem;
   right: 0.45rem;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background: rgba(122, 21, 21, 0.88);
   color: #fff;
   font: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -4631,13 +4645,109 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 
 .fw-card-delete:hover,
 .fw-detail-delete:hover {
-  background: rgba(163, 29, 29, 0.88);
+  background: #c62828;
+  transform: scale(1.05);
 }
 
 .fw-detail-delete {
   top: 0.75rem;
   right: 0.75rem;
-  background: rgba(128, 128, 128, 0.16);
+  background: rgba(190, 24, 24, 0.92);
+  z-index: 506;
+}
+
+.fw-delete-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(5, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.fw-delete-modal-card {
+  width: min(100%, 340px);
+  padding: 1.25rem;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text-dark);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.34);
+  text-align: center;
+}
+
+.fw-delete-modal-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(198, 40, 40, 0.1);
+  color: #b91c1c;
+  font-size: 1.25rem;
+}
+
+.fw-delete-modal-card h3 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  color: var(--varsity-red-dark);
+}
+
+.fw-delete-modal-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.fw-delete-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.fw-delete-modal-cancel,
+.fw-delete-modal-confirm {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fw-delete-modal-cancel {
+  background: #fff;
+  color: var(--text-dark);
+}
+
+.fw-delete-modal-confirm {
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #fff;
+}
+
+[data-theme="dark"] .fw-delete-modal-card {
+  background: #242020;
+  color: var(--text-dark);
+}
+
+[data-theme="dark"] .fw-delete-modal-card p {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+[data-theme="dark"] .fw-delete-modal-cancel {
+  background: #2e2a28;
+  color: var(--text-dark);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .fw-card-body {
@@ -4691,15 +4801,35 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   font-size: 0.68rem;
   color: rgba(255,255,255,0.4);
   margin-top: 0.2rem;
+}
+
+.fw-detail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.fw-detail-reaction-summary {
+  flex: 0 0 auto;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: #fff;
+  opacity: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 
 .fw-card-meta-right {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-left: auto;
 }
 
 .fw-card-comments {
@@ -4709,12 +4839,20 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 }
 
 .fw-card-reactions-summary {
-  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   border-radius: 999px;
-  padding: 1px 4px;
+  padding: 1px 5px;
   transition: background 0.12s;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: #fff;
+  opacity: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 
 .fw-card-reactions-summary:hover {
@@ -4727,13 +4865,7 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 
 /* Perimeter reaction badges */
 .fw-card-reaction-badge {
-  position: absolute;
-  font-size: 1.1rem;
-  line-height: 1;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
-  pointer-events: none;
-  z-index: 2;
-  transition: transform 0.15s;
+  display: none;
 }
 
 .fw-card-reaction-badge--mine {
@@ -4865,13 +4997,13 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
   position: fixed;
   top: 1.25rem;
   right: 1.25rem;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.7);
+  border: none;
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -4881,7 +5013,7 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 }
 
 .fw-overlay-close-fab:hover {
-  background: rgba(255,255,255,0.28);
+  background: rgba(0,0,0,0.9);
 }
 
 /* Centered enlarged post */
@@ -4951,9 +5083,9 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 
 .fw-comment-note {
   position: absolute;
-  width: 165px;
-  padding: 0.75rem 0.85rem 0.6rem;
-  border-radius: 4px;
+  width: 200px;
+  padding: 0.9rem 1rem 0.75rem;
+  border-radius: 6px;
   box-shadow: 3px 4px 14px rgba(0,0,0,0.35);
   pointer-events: auto;
   cursor: grab;
@@ -4967,9 +5099,9 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 }
 
 .fw-comment-note-text {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   line-height: 1.5;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.55rem;
   word-break: break-word;
   font-style: italic;
 }
@@ -4978,8 +5110,8 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.3rem;
-  min-height: 18px;
+  margin-bottom: 0.35rem;
+  min-height: 26px;
 }
 
 .fw-comment-note-actions {
@@ -4989,7 +5121,7 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 }
 
 .fw-comment-note-mine {
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -4997,44 +5129,44 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 }
 
 .fw-comment-note-delete {
-  background: rgba(180,20,20,0.15);
+  background: rgba(180,20,20,0.85);
   border: none;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.6rem;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(26,5,5,0.7);
+  color: #fff;
   transition: background 0.12s;
   flex-shrink: 0;
 }
 
 .fw-comment-note-delete:hover {
-  background: rgba(180,20,20,0.3);
+  background: #c62828;
 }
 
 .fw-comment-note-remove {
-  background: rgba(26,5,5,0.1);
+  background: rgba(26,5,5,0.7);
   border: none;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.6rem;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(26,5,5,0.5);
+  color: #fff;
   transition: background 0.12s;
   flex-shrink: 0;
 }
 
 .fw-comment-note-remove:hover {
-  background: rgba(26,5,5,0.2);
-  color: #1a0505;
+  background: rgba(26,5,5,0.9);
+  color: #fff;
 }
 
 .fw-comment-note--own {
@@ -5118,7 +5250,7 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 }
 
 .fw-comment-note-meta {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   opacity: 0.65;
 }
 
@@ -5299,6 +5431,14 @@ html:not([data-theme="dark"]) .fw-cat-btn.active {
 
 .fw-leave-note-btn:hover {
   opacity: 0.75;
+}
+
+.fw-detail-delete-action {
+  display: none;
+}
+
+.fw-detail-close {
+  display: none;
 }
 
 .fw-reaction-summary {
@@ -7937,8 +8077,7 @@ a.hamburger-menu-item:hover {
   }
 
   .page-freedom-wall .fw-overlay-close-fab {
-    top: 0.75rem;
-    right: 0.75rem;
+    display: none;
   }
 
   .page-freedom-wall .fw-overlay-post,
@@ -7948,6 +8087,28 @@ a.hamburger-menu-item:hover {
 
   .page-freedom-wall .fw-overlay-post {
     padding: 1.1rem;
+    overflow: visible;
+  }
+
+  .page-freedom-wall .fw-detail-close {
+    position: absolute;
+    top: -0.7rem;
+    right: -0.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,1);
+    color: #fff;
+    font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 508;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.34);
   }
 
   .page-freedom-wall .fw-detail-text {
@@ -7955,24 +8116,77 @@ a.hamburger-menu-item:hover {
     line-height: 1.6;
   }
 
+  .page-freedom-wall .fw-detail-footer {
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .page-freedom-wall .fw-detail-reaction-summary {
+    font-size: 0.88rem;
+  }
+
   .page-freedom-wall .fw-reaction-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px;
     align-items: stretch;
+    gap: 0.45rem;
   }
 
   .page-freedom-wall .fw-reaction-picker {
-    flex: 1 1 100%;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.32rem;
+    min-width: 0;
+  }
+
+  .page-freedom-wall .fw-reaction-summary {
+    display: none;
   }
 
   .page-freedom-wall .fw-reaction-btn {
-    flex: 1 1 auto;
+    width: 100%;
     justify-content: center;
-    min-width: 44px;
+    min-width: 0;
+    min-height: 38px;
+    padding: 0.34rem 0.15rem;
+    font-size: 0.94rem;
   }
 
   .page-freedom-wall .fw-leave-note-btn {
+    grid-column: 1 / 2;
     width: 100%;
     margin-left: 0;
+    min-height: 40px;
     padding: 0.55rem 0.75rem;
+  }
+
+  .page-freedom-wall .fw-detail-delete {
+    display: none;
+  }
+
+  .page-freedom-wall .fw-detail-delete-action {
+    grid-column: 2 / 3;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    background: rgba(190, 24, 24, 0.92);
+    color: #fff;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.34);
+  }
+
+  .page-freedom-wall .fw-detail-delete-action:hover {
+    background: #c62828;
   }
 
   .page-freedom-wall .fw-comment-note {
@@ -7989,7 +8203,7 @@ a.hamburger-menu-item:hover {
 @media (max-width: 380px) {
   .page-freedom-wall .masthead-title {
     max-width: 94px;
-    overflow: hidden;
+    overflow: visible;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -8382,9 +8596,10 @@ a.hamburger-menu-item:hover {
   .page-freedom-wall .fw-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.5rem;
+    gap: 0.75rem;
     columns: auto;
     padding: 0;
+    overflow: visible;
   }
 
   .page-freedom-wall .fw-card {
@@ -8401,11 +8616,7 @@ a.hamburger-menu-item:hover {
   }
 
   .page-freedom-wall .fw-card-delete {
-    top: 0.22rem;
-    right: 0.22rem;
-    width: 20px;
-    height: 20px;
-    font-size: 0.8rem;
+    display: none;
   }
 
   .page-freedom-wall .fw-card-body {
@@ -8440,11 +8651,39 @@ a.hamburger-menu-item:hover {
   }
 
   .page-freedom-wall .fw-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
+    margin-top: 0.15rem;
+    font-size: 0.54rem;
+    min-width: 0;
+  }
+
+  .page-freedom-wall .fw-card-time {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page-freedom-wall .fw-card-meta-right {
+    flex: 0 0 auto;
+    gap: 0.25rem;
+  }
+
+  .page-freedom-wall .fw-card-comments {
     display: none;
   }
 
+  .page-freedom-wall .fw-card-reactions-summary {
+    min-height: 18px;
+    padding: 0 0.25rem;
+    font-size: 0.72rem;
+  }
+
   .page-freedom-wall .fw-card-reaction-badge {
-    font-size: 0.78rem;
+    display: none;
   }
 
   .page-freedom-wall .fw-overlay {
@@ -8476,43 +8715,43 @@ a.hamburger-menu-item:hover {
 
   .page-freedom-wall .fw-comment-note {
     position: absolute !important;
-    width: 132px !important;
-    min-height: 58px;
-    padding: 0.34rem 0.5rem 0.32rem;
-    border-radius: 5px;
+    width: 175px !important;
+    min-height: 86px;
+    padding: 0.6rem 0.7rem 0.5rem;
+    border-radius: 7px;
     cursor: grab;
     pointer-events: auto;
-    touch-action: none;
+    touch-action: manipulation;
   }
 
   .page-freedom-wall .fw-comment-note-header {
-    min-height: 14px;
-    margin-bottom: 0.15rem;
+    min-height: 26px;
+    margin-bottom: 0.25rem;
   }
 
   .page-freedom-wall .fw-comment-note-delete,
   .page-freedom-wall .fw-comment-note-remove {
-    width: 16px;
-    height: 16px;
-    font-size: 0.58rem;
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
   }
 
   .page-freedom-wall .fw-comment-note-mine {
-    font-size: 0.5rem;
+    font-size: 0.65rem;
   }
 
   .page-freedom-wall .fw-comment-note-text {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 0.56rem;
-    line-height: 1.18;
-    margin-bottom: 0.18rem;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    margin-bottom: 0.28rem;
   }
 
   .page-freedom-wall .fw-comment-note-meta {
-    font-size: 0.48rem;
+    font-size: 0.65rem;
     line-height: 1.2;
   }
 
@@ -8562,9 +8801,19 @@ a.hamburger-menu-item:hover {
   }
 
   .page-freedom-wall .fw-overlay-toolbar {
-    top: auto;
-    bottom: 0.75rem;
+    top: 4rem;
+    bottom: auto;
     left: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-freedom-wall .fw-card {
+    overflow: visible;
+  }
+
+  .page-freedom-wall .fw-card-delete {
+    display: none;
   }
 }
 

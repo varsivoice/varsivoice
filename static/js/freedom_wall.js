@@ -447,17 +447,65 @@
     });
   }
 
+  function showDeleteFreedomPostDialog() {
+    return new Promise(function (resolve) {
+      var modal = document.createElement('div');
+      modal.className = 'fw-delete-modal';
+      modal.innerHTML =
+        '<div class="fw-delete-modal-card" role="dialog" aria-modal="true" aria-labelledby="fw-delete-modal-title">' +
+        '<div class="fw-delete-modal-icon" aria-hidden="true">&#128465;</div>' +
+        '<h3 id="fw-delete-modal-title">Delete post?</h3>' +
+        '<p>This will permanently remove the Freedom Wall post.</p>' +
+        '<div class="fw-delete-modal-actions">' +
+        '<button type="button" class="fw-delete-modal-cancel">Cancel</button>' +
+        '<button type="button" class="fw-delete-modal-confirm">Delete</button>' +
+        '</div>' +
+        '</div>';
+
+      function close(result) {
+        if (document.body.contains(modal)) document.body.removeChild(modal);
+        resolve(result);
+      }
+
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) close(false);
+      });
+      modal.querySelector('.fw-delete-modal-cancel').addEventListener('click', function () { close(false); });
+      modal.querySelector('.fw-delete-modal-confirm').addEventListener('click', function () { close(true); });
+      document.body.appendChild(modal);
+      modal.querySelector('.fw-delete-modal-cancel').focus();
+    });
+  }
+
   function confirmDeleteFreedomPost(p) {
     if (!p.is_owner) return;
-    if (!window.confirm('Delete this Freedom Wall post?')) return;
-    deleteFreedomPost(p.id)
-      .then(function () {
-        closeOverlay();
-        loadPosts(searchEl.value.trim());
-      })
-      .catch(function (e) {
-        window.alert(e.message || 'Could not delete post.');
-      });
+    showDeleteFreedomPostDialog().then(function (confirmed) {
+      if (!confirmed) return;
+      deleteFreedomPost(p.id)
+        .then(function () {
+          closeOverlay();
+          loadPosts(searchEl.value.trim());
+        })
+        .catch(function (e) {
+          window.alert(e.message || 'Could not delete post.');
+        });
+    });
+  }
+
+  function getCardReactionSummary(counts, userReaction, total) {
+    counts = counts || {};
+    var activeTypes = REACTION_TYPES.filter(function (t) { return counts[t] > 0; });
+    if (userReaction && activeTypes.indexOf(userReaction) !== -1) {
+      activeTypes = [userReaction].concat(activeTypes.filter(function (t) { return t !== userReaction; }));
+    }
+    activeTypes = activeTypes.slice(0, 3);
+    var emojiStr = activeTypes.length
+      ? activeTypes.map(function (t) { return REACTION_EMOJI[t]; }).join('')
+      : '♡';
+    if (total > 0) {
+      emojiStr += ' ' + total;
+    }
+    return emojiStr;
   }
 
   function makeCard(p, keyword) {
@@ -471,7 +519,7 @@
     var display = isTruncated ? snippet.slice(0, 200) + "…" : snippet;
 
     card.innerHTML =
-      (p.is_owner ? '<button type="button" class="fw-card-delete" aria-label="Delete post" title="Delete post">×</button>' : '') +
+      (p.is_owner ? '<button type="button" class="fw-card-delete" aria-label="Delete post" title="Delete post">&#128465;</button>' : '') +
       '<div class="fw-card-body">' +
       '<p class="fw-card-text">' + highlight(display, keyword) + '</p>' +
       '</div>' +
@@ -482,7 +530,6 @@
       '<span class="fw-card-time">' + escapeHtml(formatRelativeTime(p.created_at)) + '</span>' +
       '<div class="fw-card-meta-right">' +
       (p.comment_count > 0 ? '<span class="fw-card-comments">💬 ' + p.comment_count + '</span>' : '') +
-      // Reaction count IS the hover trigger
       '<div class="fw-card-react-wrap">' +
       '<span class="fw-card-reactions-summary fw-card-react-trigger">♡</span>' +
       '<div class="fw-card-react-picker">' +
@@ -497,18 +544,11 @@
     // Load and render reaction perimeter badges on card
     function applyReactionData(data) {
       var counts = data.counts || {};
-      var total = data.total || 0;
       var userReaction = data.user_reaction || null;
 
-      // Update reaction count / trigger (merged)
       var summaryEl = card.querySelector('.fw-card-reactions-summary');
       if (summaryEl) {
-        if (total > 0) {
-          var topEmoji = REACTION_TYPES.filter(function(t){ return counts[t] > 0; })[0];
-          summaryEl.textContent = (userReaction ? REACTION_EMOJI[userReaction] : (topEmoji ? REACTION_EMOJI[topEmoji] : '♡')) + ' ' + total;
-        } else {
-          summaryEl.textContent = '♡';
-        }
+        summaryEl.textContent = getCardReactionSummary(counts, userReaction);
         summaryEl.classList.toggle('reacted', !!userReaction);
       }
 
@@ -516,28 +556,7 @@
       var trigger = card.querySelector('.fw-card-react-trigger');
       if (trigger) trigger.classList.toggle('reacted', !!userReaction);
 
-      // Remove old badges
       card.querySelectorAll('.fw-card-reaction-badge').forEach(function (b) { b.remove(); });
-
-      // One badge per reaction type that has count > 0
-      var activeTypes = REACTION_TYPES.filter(function (t) { return counts[t] > 0; });
-      var positions = [
-        { top: '-10px', right: '-8px' },
-        { top: '-10px', left: '-8px' },
-        { bottom: '-10px', right: '-8px' },
-        { bottom: '-10px', left: '-8px' },
-        { top: '50%', right: '-12px', transform: 'translateY(-50%)' },
-        { top: '50%', left: '-12px', transform: 'translateY(-50%)' }
-      ];
-      activeTypes.forEach(function (type, i) {
-        var badge = document.createElement('span');
-        badge.className = 'fw-card-reaction-badge' + (userReaction === type ? ' fw-card-reaction-badge--mine' : '');
-        badge.textContent = REACTION_EMOJI[type];
-        badge.title = type + ' (' + counts[type] + ')';
-        var pos = positions[i % positions.length];
-        Object.keys(pos).forEach(function (k) { badge.style[k] = pos[k]; });
-        card.appendChild(badge);
-      });
 
       // Highlight active reaction button in picker
       card.querySelectorAll('.fw-card-react-btn').forEach(function (btn) {
@@ -605,6 +624,11 @@
     var startX, startY, startLeft, startTop, dragging = false;
 
     function onDown(e) {
+      // Don't prevent default if clicking a button or interactive element
+      var target = e.target;
+      if (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.fw-comment-note-delete') || target.closest('.fw-comment-note-remove')) {
+        return;
+      }
       e.preventDefault();
       dragging = true;
       var clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -668,19 +692,29 @@
     overlayPost.style.background = bgColor;
     overlayPost.style.color = textColor;
     overlayPost.innerHTML =
-      (p.is_owner ? '<button type="button" class="fw-detail-delete" aria-label="Delete post" title="Delete post">×</button>' : '') +
+      '<button type="button" class="fw-detail-close" aria-label="Close">×</button>' +
+      (p.is_owner ? '<button type="button" class="fw-detail-delete" aria-label="Delete post" title="Delete post">&#128465;</button>' : '') +
       '<div class="fw-detail-cat" style="background:' + borderColor + ';color:' + textColor + ';border:1px solid ' + borderColor + '">' + escapeHtml(p.category) + '</div>' +
       '<p class="fw-detail-text" style="color:' + textColor + '">' + escapeHtml(p.content) + '</p>' +
       (p.image_url ? '<img src="' + escapeHtml(p.image_url) + '" class="fw-detail-img" alt="Attached image" />' : '') +
       '<div class="fw-detail-footer" style="border-color:' + borderColor + ';color:' + mutedColor + '">' +
       '<span style="color:' + mutedColor + '">Anonymous · ' + escapeHtml(formatRelativeTime(p.created_at)) + '</span>' +
+      '<span id="fw-detail-reaction-summary" class="fw-detail-reaction-summary">♡</span>' +
       '</div>' +
       '<div id="fw-detail-reactions"></div>';
 
+    var detailCloseBtn = overlayPost.querySelector('.fw-detail-close');
+    if (detailCloseBtn) {
+      detailCloseBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        closeOverlay();
+      });
+    }
+
     var detailDeleteBtn = overlayPost.querySelector('.fw-detail-delete');
     if (detailDeleteBtn) {
-      detailDeleteBtn.style.color = textColor;
-      detailDeleteBtn.style.borderColor = borderColor;
+      detailDeleteBtn.style.color = '#fff';
+      detailDeleteBtn.style.borderColor = 'rgba(255,255,255,0.34)';
       detailDeleteBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         confirmDeleteFreedomPost(p);
@@ -694,6 +728,10 @@
       reactionsEl.style.borderTopColor = borderColor;
       function renderBar(newData) {
         reactionsEl.innerHTML = '';
+        var detailSummary = overlayPost.querySelector('#fw-detail-reaction-summary');
+        if (detailSummary) {
+          detailSummary.textContent = getCardReactionSummary(newData.counts || {}, newData.user_reaction || null, newData.total || 0);
+        }
         var bar = buildReactionBar(p.id, newData, renderBar, textColor, mutedColor, borderColor);
 
         // Add "Leave a note" toggle button
@@ -714,31 +752,35 @@
           }
         });
         bar.appendChild(noteBtn);
+
+        if (p.is_owner) {
+          var actionDeleteBtn = document.createElement('button');
+          actionDeleteBtn.type = 'button';
+          actionDeleteBtn.className = 'fw-detail-delete-action';
+          actionDeleteBtn.setAttribute('aria-label', 'Delete post');
+          actionDeleteBtn.title = 'Delete post';
+          actionDeleteBtn.innerHTML = '&#128465;';
+          actionDeleteBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            confirmDeleteFreedomPost(p);
+          });
+          bar.appendChild(actionDeleteBtn);
+        }
+
         reactionsEl.appendChild(bar);
 
         var cardEl = gridEl.querySelector('[data-post-id="' + p.id + '"]');
         if (cardEl) {
-          // Refresh perimeter badges
           cardEl.querySelectorAll('.fw-card-reaction-badge').forEach(function (b) { b.remove(); });
           var counts = newData.counts || {};
           var userReaction = newData.user_reaction || null;
-          var activeTypes = REACTION_TYPES.filter(function (t) { return counts[t] > 0; });
-          var positions = [
-            { top: '-10px', right: '-8px' },
-            { top: '-10px', left: '-8px' },
-            { bottom: '-10px', right: '-8px' },
-            { bottom: '-10px', left: '-8px' },
-            { top: '50%', right: '-12px', transform: 'translateY(-50%)' },
-            { top: '50%', left: '-12px', transform: 'translateY(-50%)' }
-          ];
-          activeTypes.forEach(function (type, i) {
-            var badge = document.createElement('span');
-            badge.className = 'fw-card-reaction-badge' + (userReaction === type ? ' fw-card-reaction-badge--mine' : '');
-            badge.textContent = REACTION_EMOJI[type];
-            badge.title = type + ' (' + counts[type] + ')';
-            var pos = positions[i % positions.length];
-            Object.keys(pos).forEach(function (k) { badge.style[k] = pos[k]; });
-            cardEl.appendChild(badge);
+          var summaryEl = cardEl.querySelector('.fw-card-reactions-summary');
+          if (summaryEl) {
+            summaryEl.textContent = getCardReactionSummary(counts, userReaction);
+            summaryEl.classList.toggle('reacted', !!userReaction);
+          }
+          cardEl.querySelectorAll('.fw-card-react-btn').forEach(function (btn) {
+            btn.classList.toggle('active', btn.dataset.reaction === userReaction);
           });
         }
       }
@@ -777,8 +819,8 @@
           var postRect = overlayPost.getBoundingClientRect();
           var vw = window.innerWidth;
           var vh = window.innerHeight;
-          var noteW = isMobile ? 132 : 165;
-          var noteH = isMobile ? 68 : 110;
+          var noteW = isMobile ? 175 : 200;
+          var noteH = isMobile ? 110 : 135;
           var margin = isMobile ? 8 : 16;
           var pad = isMobile ? 8 : 24;
 
