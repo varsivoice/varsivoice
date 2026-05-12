@@ -5,6 +5,7 @@ Run: pip install -r requirements.txt
 """
 import os
 import random
+import re
 import sqlite3
 import uuid
 import smtplib
@@ -78,6 +79,34 @@ AVATAR_COLOR_PALETTE = [
     '#c0392b', '#7f8c8d', '#2c3e50', '#6d4c41',
     '#00838f', '#558b2f', '#6a1b9a', '#1565c0'
 ]
+
+# Words in this list are masked before posts/comments are saved.
+# Add or remove words here to tune the wall's moderation policy.
+FORBIDDEN_WORDS = {
+    "asshole",
+    "bitch",
+    "bullshit",
+    "crap",
+    "damn",
+    "fuck",
+    "fucking",
+    "shit",
+    "stupid",
+    "tanga",
+    "yawa",
+}
+
+FORBIDDEN_WORDS_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(word) for word in sorted(FORBIDDEN_WORDS, key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
+
+
+def censor_forbidden_words(text):
+    """Replace forbidden words with asterisks while preserving spacing/punctuation."""
+    if not text:
+        return text
+    return FORBIDDEN_WORDS_PATTERN.sub(lambda match: "*" * len(match.group(0)), text)
 
 
 def select_random_color():
@@ -534,6 +563,7 @@ def create_fw_post():
 
     if not content and not image_url:
         return jsonify({"error": "Please write something or attach an image."}), 400
+    content = censor_forbidden_words(content)
 
     conn = get_conn()
     try:
@@ -651,6 +681,7 @@ def create_post():
 
     if not content and not image_url:
         return jsonify({"error": "Please write something or attach an image."}), 400
+    content = censor_forbidden_words(content)
 
     conn = get_conn()
     try:
@@ -756,6 +787,7 @@ def update_post(post_id):
         return jsonify({"error": "Content is required."}), 400
     if len(content) > 1000:
         return jsonify({"error": "Post is too long (max 1000 characters)."}), 400
+    content = censor_forbidden_words(content)
 
     conn = get_conn()
     try:
@@ -1237,6 +1269,7 @@ def create_comment(post_id):
 
     if not content and not image_url:
         return jsonify({"error": "Please write something or attach an image."}), 400
+    content = censor_forbidden_words(content)
 
     conn = get_conn()
     try:
@@ -1304,6 +1337,7 @@ def update_comment(comment_id):
         return jsonify({"error": "Valid user_id is required."}), 400
     if not content:
         return jsonify({"error": "Comment cannot be empty."}), 400
+    content = censor_forbidden_words(content)
 
     conn = get_conn()
     try:
