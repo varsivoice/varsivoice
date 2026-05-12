@@ -497,6 +497,11 @@ def list_fw_posts():
     search = (request.args.get("q") or "").strip()
     category = (request.args.get("category") or "").strip()
     sort = request.args.get("sort", "latest")
+    viewer_user_id_raw = request.args.get("viewer_user_id")
+    try:
+        viewer_user_id = int(viewer_user_id_raw) if viewer_user_id_raw else None
+    except (TypeError, ValueError):
+        viewer_user_id = None
 
     order = "p.created_at DESC"
     if sort == "likes":
@@ -522,13 +527,14 @@ def list_fw_posts():
             SELECT p.id, p.content, p.category, p.created_at, p.updated_at, p.image_url,
               'Anonymous' AS author_name,
               NULL AS author_photo,
+              CASE WHEN ? IS NOT NULL AND p.user_id = ? THEN 1 ELSE 0 END AS is_owner,
               (SELECT COUNT(*) FROM reactions r WHERE r.target_type='post' AND r.target_id = p.id) AS like_count,
               (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comment_count
             FROM posts p
             {where}
             ORDER BY {order}
             """,
-            params,
+            [viewer_user_id, viewer_user_id] + params,
         ).fetchall()
         return jsonify([json_row(r) for r in rows])
     finally:
@@ -578,7 +584,8 @@ def create_fw_post():
         row = conn.execute(
             """
             SELECT p.id, p.content, p.category, p.created_at, p.updated_at, p.image_url,
-              'Anonymous' AS author_name, NULL AS author_photo
+              'Anonymous' AS author_name, NULL AS author_photo,
+              1 AS is_owner
             FROM posts p WHERE p.id = ?
             """,
             (pid,),
@@ -1665,15 +1672,16 @@ def toggle_like(post_id):
 def list_submissions():
     ids_param = request.args.get("ids", "").strip()
     user_id_param = request.args.get("user_id", "").strip()
-    # Public feed: return all submissions when no ids/user_id given
+    # Public feed: only approved submissions are published for everyone to read.
     if not ids_param and not user_id_param:
         conn = get_conn()
         try:
             rows = conn.execute(
                 """
                 SELECT id, author_name, author_bio, title, category,
-                  status, created_at, updated_at
+                  content, status, created_at, updated_at, document_url, document_name
                 FROM submissions
+                WHERE status = 'Approved'
                 ORDER BY created_at DESC
                 LIMIT 50
                 """

@@ -388,7 +388,7 @@
   function loadPosts(q, randomize) {
     statusEl.textContent = "Loading…";
     var url = "/api/fw-posts";
-    var params = [];
+    var params = ["viewer_user_id=" + encodeURIComponent(currentUser.user_id)];
     if (fwCurrentSort && fwCurrentSort !== "latest") params.push("sort=" + encodeURIComponent(fwCurrentSort));
     if (q) params.push("q=" + encodeURIComponent(q));
     if (currentCategory && currentCategory !== "All") params.push("category=" + encodeURIComponent(currentCategory));
@@ -434,6 +434,32 @@
     return escapeHtml(text).replace(new RegExp("(" + escaped + ")", "gi"), '<mark class="search-highlight">$1</mark>');
   }
 
+  function deleteFreedomPost(postId) {
+    return fetch('/api/posts/' + postId, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: currentUser.user_id })
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error(j.error || r.statusText);
+        return j;
+      });
+    });
+  }
+
+  function confirmDeleteFreedomPost(p) {
+    if (!p.is_owner) return;
+    if (!window.confirm('Delete this Freedom Wall post?')) return;
+    deleteFreedomPost(p.id)
+      .then(function () {
+        closeOverlay();
+        loadPosts(searchEl.value.trim());
+      })
+      .catch(function (e) {
+        window.alert(e.message || 'Could not delete post.');
+      });
+  }
+
   function makeCard(p, keyword) {
     var card = document.createElement("div");
     card.className = "fw-card";
@@ -445,6 +471,7 @@
     var display = isTruncated ? snippet.slice(0, 200) + "…" : snippet;
 
     card.innerHTML =
+      (p.is_owner ? '<button type="button" class="fw-card-delete" aria-label="Delete post" title="Delete post">×</button>' : '') +
       '<div class="fw-card-body">' +
       '<p class="fw-card-text">' + highlight(display, keyword) + '</p>' +
       '</div>' +
@@ -519,6 +546,14 @@
     }
 
     fetchReactions(p.id, applyReactionData);
+
+    var deleteBtn = card.querySelector('.fw-card-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        confirmDeleteFreedomPost(p);
+      });
+    }
 
     // Trigger: clicking the reaction count reacts with heart (or removes)
     var trigger = card.querySelector('.fw-card-react-trigger');
@@ -633,6 +668,7 @@
     overlayPost.style.background = bgColor;
     overlayPost.style.color = textColor;
     overlayPost.innerHTML =
+      (p.is_owner ? '<button type="button" class="fw-detail-delete" aria-label="Delete post" title="Delete post">×</button>' : '') +
       '<div class="fw-detail-cat" style="background:' + borderColor + ';color:' + textColor + ';border:1px solid ' + borderColor + '">' + escapeHtml(p.category) + '</div>' +
       '<p class="fw-detail-text" style="color:' + textColor + '">' + escapeHtml(p.content) + '</p>' +
       (p.image_url ? '<img src="' + escapeHtml(p.image_url) + '" class="fw-detail-img" alt="Attached image" />' : '') +
@@ -640,6 +676,16 @@
       '<span style="color:' + mutedColor + '">Anonymous · ' + escapeHtml(formatRelativeTime(p.created_at)) + '</span>' +
       '</div>' +
       '<div id="fw-detail-reactions"></div>';
+
+    var detailDeleteBtn = overlayPost.querySelector('.fw-detail-delete');
+    if (detailDeleteBtn) {
+      detailDeleteBtn.style.color = textColor;
+      detailDeleteBtn.style.borderColor = borderColor;
+      detailDeleteBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        confirmDeleteFreedomPost(p);
+      });
+    }
 
     // Reactions + "Leave a note" button
     var reactionsEl = overlayPost.querySelector('#fw-detail-reactions');
@@ -727,17 +773,17 @@
 
           var isMobile = window.innerWidth <= 700;
 
-          // Get actual post bounds after render (desktop only)
-          var postRect = isMobile ? null : overlayPost.getBoundingClientRect();
+          // Get actual post bounds after render so notes can scatter around it on every viewport.
+          var postRect = overlayPost.getBoundingClientRect();
           var vw = window.innerWidth;
           var vh = window.innerHeight;
-          var noteW = 165;
-          var noteH = 110;
-          var margin = 16;
-          var pad = 24;
+          var noteW = isMobile ? 132 : 165;
+          var noteH = isMobile ? 68 : 110;
+          var margin = isMobile ? 8 : 16;
+          var pad = isMobile ? 8 : 24;
 
           var zones = [];
-          if (!isMobile && postRect) {
+          if (postRect) {
             if (postRect.left - noteW - pad - margin > margin)
               zones.push({ x: [margin, postRect.left - noteW - pad], y: [margin, vh - noteH - margin] });
             if (postRect.right + pad + noteW + margin < vw)
@@ -765,7 +811,7 @@
             note.style.background = noteColor;
             note.style.transform = 'rotate(' + rotation + 'deg)';
 
-            if (!isMobile && zones.length) {
+            if (zones.length) {
               var zone = zones[i % zones.length];
               var xRange = Math.max(0, zone.x[1] - zone.x[0]);
               var yRange = Math.max(0, zone.y[1] - zone.y[0]);

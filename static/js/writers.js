@@ -126,6 +126,7 @@
     feedStatusEl.textContent = "Loading…";
     api("/api/submissions")
       .then(function (rows) {
+        rows = rows.filter(function (s) { return s.status === "Approved"; });
         feedStatusEl.textContent = "";
         feedEl.innerHTML = "";
         if (!rows.length) {
@@ -144,6 +145,9 @@
   function renderFeedCard(s) {
     var card = document.createElement("article");
     card.className = "writeup-card";
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.title = "Click to read";
 
     var categoryColors = {
       "Feature Article": "#c0392b",
@@ -172,9 +176,21 @@
       '<p class="writeup-preview">' + escapeHtml(preview) + '</p>' +
       (s.document_url ? '<p class="writeup-doc"><a href="' + escapeHtml(s.document_url) + '" target="_blank" rel="noopener" class="doc-link">📄 ' + escapeHtml(s.document_name || 'Attached document') + '</a></p>' : '') +
       '<div class="writeup-footer">' +
-      statusBadge +
+      '<span class="writeup-status writeup-status--approved">Read writeup</span>' +
       '<span class="writeup-date">' + escapeHtml(new Date(s.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })) + '</span>' +
       '</div>';
+
+    function openReadModal() { openSubmissionModal(s, { readonly: true }); }
+    card.addEventListener("click", function (e) {
+      if (e.target.closest("a")) return;
+      openReadModal();
+    });
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openReadModal();
+      }
+    });
 
     return card;
   }
@@ -240,17 +256,19 @@
     return art;
   }
 
-  function openSubmissionModal(s) {
+  function openSubmissionModal(s, options) {
+    options = options || {};
     var overlay = document.createElement("div");
     overlay.className = "action-modal";
     overlay.setAttribute("aria-hidden", "false");
+    var modalCardClass = options.readonly ? "sub-modal-card sub-modal-card--read" : "sub-modal-card";
 
     var categoryOptions = ["Feature Article","Opinion/Editorial","News","Literary/Creative","Sports","Campus Life"];
     var catSelects = categoryOptions.map(function (c) {
       return '<option' + (c === s.category ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
     }).join('');
 
-    var isEditable = s.status === "Pending Review";
+    var isEditable = s.status === "Pending Review" && !options.readonly;
     var readonlyAttr = isEditable ? '' : ' disabled';
     var editedLine = s.updated_at
       ? '<p class="sub-modal-edited">Last edited: ' + new Date(s.updated_at + 'Z').toLocaleString() + '</p>'
@@ -263,11 +281,11 @@
     var isDocumentOnly = s.document_url && !plainText;
 
     overlay.innerHTML =
-      '<div class="sub-modal-card">' +
+      '<div class="' + modalCardClass + '">' +
       // Fixed header
       '<div class="sub-modal-header">' +
       '<div>' +
-      '<h4 class="ep-modal-title" style="margin:0;">' + (isEditable ? '✏️ Edit Submission' : '📄 View Submission') + '</h4>' +
+      '<h4 class="ep-modal-title" style="margin:0;">' + (isEditable ? '✏️ Edit Submission' : 'Read Writeup') + '</h4>' +
       (editedLine ? '<p class="sub-modal-edited" style="margin:0.25rem 0 0;">' + (s.updated_at ? 'Last edited: ' + new Date(s.updated_at + 'Z').toLocaleString() : '') + '</p>' : '') +
       '</div>' +
       '<button type="button" class="ep-close-btn" id="sub-modal-close">✕</button>' +
@@ -316,6 +334,7 @@
             : '<div class="sub-modal-editor sub-modal-editor--readonly">' + (s.content || '') + '</div>'))) +
       (!isDocumentOnly && s.document_url ? '<p style="margin-top:1rem;"><a href="' + escapeHtml(s.document_url) + '" target="_blank" rel="noopener" class="doc-link">📄 ' + escapeHtml(s.document_name || 'Attached document') + '</a></p>' : '') +
       '</div>' +
+      (!isEditable && isDocumentOnly && s.document_url ? '<p style="margin-top:1rem;"><a href="' + escapeHtml(s.document_url) + '" target="_blank" rel="noopener" class="doc-link">' + escapeHtml(s.document_name || 'Attached document') + '</a></p>' : '') +
       // Footer
       '<div class="sub-modal-footer">' +
       '<p id="sub-modal-error" class="ep-error hidden"></p>' +
@@ -559,6 +578,78 @@
       if (sub) sub.textContent = isOpen ? "Click to expand and start writing" : "Click to collapse";
     });
   }
+
+  // --- Mobile section tabs ---
+  var writersMobileNav = document.querySelector(".writers-mobile-nav");
+  var writersMobileLinks = writersMobileNav ? Array.prototype.slice.call(writersMobileNav.querySelectorAll("a[href^='#writers-']")) : [];
+  var writersMobileSections = {
+    "#writers-submit": document.getElementById("writers-submit"),
+    "#writers-submissions": document.getElementById("writers-submissions"),
+    "#writers-published": document.getElementById("writers-published")
+  };
+  var writersMobileQuery = window.matchMedia ? window.matchMedia("(max-width: 768px)") : null;
+
+  function setWritersMobileSection(targetHash) {
+    if (!writersMobileSections[targetHash]) targetHash = "#writers-submit";
+    if (writersMobileNav) {
+      writersMobileNav.dataset.active = targetHash.replace("#writers-", "");
+    }
+
+    writersMobileLinks.forEach(function (link) {
+      var isActive = link.getAttribute("href") === targetHash;
+      link.classList.toggle("active", isActive);
+      if (isActive) {
+        link.setAttribute("aria-current", "page");
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    });
+
+    Object.keys(writersMobileSections).forEach(function (hash) {
+      var section = writersMobileSections[hash];
+      if (!section) return;
+      section.classList.toggle("writers-mobile-section-hidden", hash !== targetHash);
+    });
+  }
+
+  function resetWritersMobileSections() {
+    Object.keys(writersMobileSections).forEach(function (hash) {
+      var section = writersMobileSections[hash];
+      if (section) section.classList.remove("writers-mobile-section-hidden");
+    });
+  }
+
+  function syncWritersMobileSections() {
+    var isMobile = writersMobileQuery ? writersMobileQuery.matches : window.innerWidth <= 768;
+    if (isMobile) {
+      setWritersMobileSection(writersMobileSections[window.location.hash] ? window.location.hash : "#writers-submit");
+    } else {
+      resetWritersMobileSections();
+    }
+  }
+
+  writersMobileLinks.forEach(function (link) {
+    link.addEventListener("click", function (e) {
+      var targetHash = link.getAttribute("href");
+      var isMobile = writersMobileQuery ? writersMobileQuery.matches : window.innerWidth <= 768;
+      if (!isMobile) return;
+      e.preventDefault();
+      setWritersMobileSection(targetHash);
+      if (history && history.replaceState) history.replaceState(null, "", targetHash);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+
+  if (writersMobileQuery) {
+    if (writersMobileQuery.addEventListener) {
+      writersMobileQuery.addEventListener("change", syncWritersMobileSections);
+    } else if (writersMobileQuery.addListener) {
+      writersMobileQuery.addListener(syncWritersMobileSections);
+    }
+  } else {
+    window.addEventListener("resize", syncWritersMobileSections);
+  }
+  syncWritersMobileSections();
 
   // --- Submission type choice ---
   var subTypeWrite = document.getElementById("sub-type-write");

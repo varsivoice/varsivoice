@@ -54,6 +54,10 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
           </button>
           <div id="hamburger-menu" class="hamburger-menu hidden" role="menu">
+              <a href="/wall" class="hamburger-menu-item hamburger-mobile-nav" role="menuitem">Home</a>
+              <a href="/freedom-wall" class="hamburger-menu-item hamburger-mobile-nav" role="menuitem">VarsiVoice</a>
+              <a href="/writers" class="hamburger-menu-item hamburger-mobile-nav active" role="menuitem">Writer's Hub</a>
+              <div class="hamburger-divider hamburger-mobile-nav"></div>
               <div class="hamburger-submenu-label">Appearance</div>
               <button type="button" id="theme-light-btn" class="hamburger-theme-btn active" aria-pressed="true">☀️ Light mode</button>
               <button type="button" id="theme-dark-btn" class="hamburger-theme-btn" aria-pressed="false">🌙 Dark mode</button>
@@ -78,10 +82,25 @@
     </div>
   </section>
 
+  <nav class="writers-mobile-nav" aria-label="Writer's Hub sections">
+    <a href="#writers-submit" class="active" aria-current="page">
+      <span class="writers-mobile-nav-icon" aria-hidden="true">+</span>
+      <span>Submit</span>
+    </a>
+    <a href="#writers-submissions">
+      <span class="writers-mobile-nav-icon" aria-hidden="true">≡</span>
+      <span>Submissions</span>
+    </a>
+    <a href="#writers-published">
+      <span class="writers-mobile-nav-icon" aria-hidden="true">✓</span>
+      <span>Published</span>
+    </a>
+  </nav>
+
   <main class="writers-layout">
     <!-- Left: submission form -->
     <div class="writers-form-col">
-      <section class="card writers-form-card">
+      <section class="card writers-form-card" id="writers-submit">
         <button type="button" class="writers-form-toggle" id="form-toggle" aria-expanded="false" aria-controls="submission-form-body">
           <div class="writers-form-toggle-left">
             <span class="writers-form-toggle-icon">✒</span>
@@ -177,7 +196,7 @@
         </div>
       </section>
 
-      <section class="card writers-list-card">
+      <section class="card writers-list-card" id="writers-submissions">
         <h3 class="section-title-serif">Your submissions</h3>
         <p class="hint">Only your own submissions are shown here.</p>
         <p id="writers-status" class="status-msg"></p>
@@ -186,7 +205,7 @@
     </div>
 
     <!-- Right: public writeups feed -->
-    <aside class="writers-feed-col">
+    <aside class="writers-feed-col" id="writers-published">
       <div class="card writers-feed-card">
         <h3 class="section-title-serif">📰 Published Writeups</h3>
         <p class="hint" style="margin-top:0">Recent submissions from the community.</p>
