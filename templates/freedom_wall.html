@@ -14,15 +14,17 @@
     <div class="masthead-inner">
       <!-- Left: brand -->
       <div class="masthead-left">
-        <span class="logo-pen" aria-hidden="true">
-          <img src="/images/fist-logo.png" alt="" width="44" height="44" />
-        </span>
-        <div class="masthead-brand">
-          <div class="masthead-brand-text">
-            <span class="masthead-title">The Varsitarian</span>
-            <span class="masthead-sub">The official student publication of the University of Bohol</span>
+        <a href="/wall" class="masthead-brand-link" aria-label="Go to home page">
+          <span class="logo-pen" aria-hidden="true">
+            <img src="/images/fist-logo.png" alt="" width="44" height="44" />
+          </span>
+          <div class="masthead-brand">
+            <div class="masthead-brand-text">
+              <span class="masthead-title">The Varsitarian</span>
+              <span class="masthead-sub">The official student publication of the University of Bohol</span>
+            </div>
           </div>
-        </div>
+        </a>
       </div>
       <!-- Right: nav, bell, avatar, hamburger -->
       <div class="masthead-right">
@@ -183,9 +185,26 @@
     </div>
   </div>
 
+  <button type="button" id="back-to-top" class="back-to-top" aria-label="Back to top">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
+  </button>
+
   <script src="{{ url_for('static', filename='js/avatar-color.js') }}"></script>
   <script src="{{ url_for('static', filename='js/notif.js') }}"></script>
   <script src="{{ url_for('static', filename='js/restriction-status.js') }}"></script>
   <script src="{{ url_for('static', filename='js/freedom_wall.js') }}"></script>
+  <script>
+    (function() {
+      var btn = document.getElementById('back-to-top');
+      if (btn) {
+        window.addEventListener('scroll', function() {
+          btn.classList.toggle('visible', window.scrollY > 400);
+        });
+        btn.addEventListener('click', function() {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

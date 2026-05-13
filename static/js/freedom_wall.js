@@ -2,6 +2,110 @@
   var STORAGE_KEY = "ub_session";
   var currentUser = null;
 
+  var REPORT_REASONS = [
+    { value: 'spam', label: '🚫 Spam', desc: 'Repetitive or unwanted content' },
+    { value: 'bullying', label: '👊 Bullying', desc: 'Intimidation or personal attacks' },
+    { value: 'inappropriate', label: '🔞 Inappropriate', desc: 'Offensive or explicit content' },
+    { value: 'harassment', label: '😡 Harassment', desc: 'Bullying or targeted abuse' },
+    { value: 'other', label: '📋 Other', desc: 'Another reason not listed' }
+  ];
+
+  function openReportModal(targetType, targetId) {
+    var overlay = document.createElement('div');
+    overlay.className = 'action-modal';
+    overlay.setAttribute('aria-hidden', 'false');
+
+    overlay.innerHTML =
+      '<div class="report-modal-card">' +
+      '<div class="ep-modal-header">' +
+      '<h4 class="ep-modal-title">Report ' + (targetType === 'post' ? 'Post' : 'Comment') + '</h4>' +
+      '<button type="button" class="ep-close-btn" id="report-close">✕</button>' +
+      '</div>' +
+      '<div class="report-reasons" id="report-body">' +
+      '<p style="text-align:center;color:rgba(255,255,255,0.7);padding:1.5rem 0;">Checking…</p>' +
+      '</div>' +
+      '<p id="report-error" class="ep-error hidden"></p>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) document.body.removeChild(overlay); });
+    overlay.querySelector('#report-close').addEventListener('click', function () { document.body.removeChild(overlay); });
+
+    var reportBody = overlay.querySelector('#report-body');
+
+    function showAlreadyReported() {
+      reportBody.innerHTML =
+        '<div style="text-align:center;padding:1.5rem 0;">' +
+        '<p style="font-size:2rem;margin:0 0 0.5rem;">🚩</p>' +
+        '<p style="font-size:1rem;font-weight:600;margin:0 0 0.5rem;">Report already submitted</p>' +
+        '<p style="font-size:0.85rem;color:rgba(255,255,255,0.7);margin:0;">Thank you for flagging this. Please await our decision — we\'ll review it as soon as possible.</p>' +
+        '</div>';
+    }
+
+    function showReasonPicker() {
+      var reasonBtns = REPORT_REASONS.map(function (r) {
+        return '<button type="button" class="report-reason-btn" data-reason="' + r.value + '">' +
+          '<span class="report-reason-label">' + r.label + '</span>' +
+          '<span class="report-reason-desc">' + r.desc + '</span>' +
+          '</button>';
+      }).join('');
+
+      reportBody.innerHTML =
+        '<p style="font-size:0.85rem;color:rgba(255,255,255,0.75);margin:0 0 1rem;">Why are you reporting this?</p>' +
+        reasonBtns;
+
+      var errorEl = overlay.querySelector('#report-error');
+      reportBody.querySelectorAll('.report-reason-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var reason = btn.dataset.reason;
+          reportBody.querySelectorAll('.report-reason-btn').forEach(function (b) { b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          fetch('/api/reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reporter_user_id: currentUser.user_id, target_type: targetType, target_id: targetId, reason: reason })
+          }).then(function (r) {
+            return r.json().then(function (j) {
+              if (r.status === 409) { showAlreadyReported(); return null; }
+              if (!r.ok) throw new Error(j.error || r.statusText);
+              return j;
+            });
+          })
+            .then(function (j) {
+              if (!j) return;
+              reportBody.innerHTML =
+                '<div style="text-align:center;padding:1.5rem 0;">' +
+                '<p style="font-size:2rem;margin:0 0 0.5rem;">✅</p>' +
+                '<p style="font-size:1rem;font-weight:600;margin:0 0 0.4rem;">Report submitted!</p>' +
+                '<p style="font-size:0.85rem;color:rgba(255,255,255,0.7);margin:0;">Thank you for helping keep the wall safe. We\'ll look into it shortly.</p>' +
+                '</div>';
+              setTimeout(function () { if (document.body.contains(overlay)) document.body.removeChild(overlay); }, 1800);
+            })
+            .catch(function (e) {
+              reportBody.querySelectorAll('.report-reason-btn').forEach(function (b) { b.classList.remove('selected'); });
+              errorEl.textContent = e.message || 'Could not submit report.';
+              errorEl.classList.remove('hidden');
+            });
+        });
+      });
+    }
+
+    fetch('/api/reports/check?reporter_user_id=' + currentUser.user_id +
+      '&target_type=' + encodeURIComponent(targetType) +
+      '&target_id=' + encodeURIComponent(targetId))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.reported) {
+          showAlreadyReported();
+        } else {
+          showReasonPicker();
+        }
+      })
+      .catch(function () {
+        showReasonPicker();
+      });
+  }
+
   function ensureSession() {
     try {
       var raw = sessionStorage.getItem(STORAGE_KEY);
@@ -520,6 +624,7 @@
 
     card.innerHTML =
       (p.is_owner ? '<button type="button" class="fw-card-delete" aria-label="Delete post" title="Delete post">&#128465;</button>' : '') +
+      '<button type="button" class="fw-card-report" aria-label="Report post" title="Report post">🚩</button>' +
       '<div class="fw-card-body">' +
       '<p class="fw-card-text">' + highlight(display, keyword) + '</p>' +
       '</div>' +
@@ -571,6 +676,14 @@
       deleteBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         confirmDeleteFreedomPost(p);
+      });
+    }
+
+    var reportBtn = card.querySelector('.fw-card-report');
+    if (reportBtn) {
+      reportBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        openReportModal('post', p.id);
       });
     }
 
@@ -721,6 +834,13 @@
       });
     }
 
+    // Show report button on the card
+    var cardEl = gridEl.querySelector('[data-post-id="' + p.id + '"]');
+    if (cardEl) {
+      var cardReportBtn = cardEl.querySelector('.fw-card-report');
+      if (cardReportBtn) cardReportBtn.classList.add('visible');
+    }
+
     // Reactions + "Leave a note" button
     var reactionsEl = overlayPost.querySelector('#fw-detail-reactions');
     fetchReactions(p.id, function (data) {
@@ -734,13 +854,16 @@
         }
         var bar = buildReactionBar(p.id, newData, renderBar, textColor, mutedColor, borderColor);
 
+        // Create a row for leave-note and action buttons
+        var actionRow = document.createElement('div');
+        actionRow.className = 'fw-action-row';
+        actionRow.style.cssText = 'display:flex;align-items:center;gap:0.5rem;';
+
         // Add "Leave a note" toggle button
         var noteBtn = document.createElement('button');
         noteBtn.type = 'button';
         noteBtn.className = 'fw-leave-note-btn';
-        noteBtn.style.color = textColor;
-        noteBtn.style.borderColor = borderColor;
-        noteBtn.style.background = 'rgba(128,128,128,0.15)';
+        noteBtn.style.cssText = 'flex:1;' + 'color:' + textColor + ';border-color:' + borderColor + ';background:rgba(128,128,128,0.15);';
         noteBtn.innerHTML = '📌 Leave a note';
         noteBtn.addEventListener('click', function (e) {
           e.stopPropagation();
@@ -751,21 +874,49 @@
             if (inp) inp.focus();
           }
         });
-        bar.appendChild(noteBtn);
+        actionRow.appendChild(noteBtn);
 
-        if (p.is_owner) {
+        // Create actions container for delete/report
+        var actionsContainer = document.createElement('div');
+        actionsContainer.className = 'fw-detail-actions';
+        actionsContainer.style.cssText = 'display:flex!important;gap:0.35rem;flex-shrink:0;';
+
+        var isOwner = !!(p.is_owner || (p.user_id && p.user_id === currentUser.user_id));
+
+        // Only one icon: trash for owner, flag for non-owner
+        if (isOwner) {
           var actionDeleteBtn = document.createElement('button');
           actionDeleteBtn.type = 'button';
           actionDeleteBtn.className = 'fw-detail-delete-action';
           actionDeleteBtn.setAttribute('aria-label', 'Delete post');
           actionDeleteBtn.title = 'Delete post';
           actionDeleteBtn.innerHTML = '&#128465;';
+          actionDeleteBtn.style.cssText = 'display:inline-flex!important;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.3);background:rgba(190,24,24,0.7);color:#fff;font:inherit;font-size:0.85rem;cursor:pointer;';
           actionDeleteBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             confirmDeleteFreedomPost(p);
           });
-          bar.appendChild(actionDeleteBtn);
+          actionsContainer.appendChild(actionDeleteBtn);
+        } else {
+          var actionReportBtn = document.createElement('button');
+          actionReportBtn.type = 'button';
+          actionReportBtn.className = 'fw-detail-report-action';
+          actionReportBtn.setAttribute('aria-label', 'Report post');
+          actionReportBtn.title = 'Report post';
+          actionReportBtn.innerHTML = '&#128681;';
+          actionReportBtn.style.cssText = 'display:inline-flex!important;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.3);background:rgba(0,0,0,0.5);color:#fff;font:inherit;font-size:0.85rem;cursor:pointer;';
+          actionReportBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            openReportModal('post', p.id);
+          });
+          actionsContainer.appendChild(actionReportBtn);
         }
+
+        if (actionsContainer.children.length > 0) {
+          actionRow.appendChild(actionsContainer);
+        }
+
+        bar.appendChild(actionRow);
 
         reactionsEl.appendChild(bar);
 
@@ -987,6 +1138,10 @@
     overlayCompose.classList.add('hidden');
     overlayToolbar.classList.add('hidden');
     removedStack = []; // reset on close so comments show fresh next time
+    // Hide report buttons on all cards
+    gridEl.querySelectorAll('.fw-card-report').forEach(function(btn) {
+      btn.classList.remove('visible');
+    });
   }
 
   var overlayCloseBtn = document.getElementById("fw-overlay-close");

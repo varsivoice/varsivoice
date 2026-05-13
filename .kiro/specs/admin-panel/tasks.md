@@ -180,6 +180,70 @@ Implement a two-tier admin panel for The Varsitarian / Freedom Wall app using th
 - [x] 13. Final checkpoint — ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [ ] 14. Add mobile responsiveness CSS to `static/css/style.css`
+  - Add responsive breakpoint at `max-width: 900px` for mobile/tablet layout.
+  - Hide desktop sidebar (`.admin-sidebar { display: none !important; }`).
+  - Show mobile menu button (`.admin-mobile-sidebar-toggle { display: block; }`).
+  - Update `.admin-layout` to full-width grid: `grid-template-columns: 1fr !important;`.
+  - Add styles for `.admin-mobile-sidebar-toggle` button: 24×24px, transparent background, hover state with light red.
+  - Add styles for `.admin-mobile-drawer`: 280px fixed width, left side, `translateX(-100%)` hidden, `translateX(0)` visible, smooth 0.3s transition.
+  - Add styles for `.admin-mobile-drawer-overlay`: fixed full viewport, `rgba(0, 0, 0, 0.5)` background, pointer events managed.
+  - Add styles for `.admin-mobile-drawer-header`, `.admin-mobile-drawer-close`, `.admin-mobile-nav`, `.admin-mobile-nav-item`, `.admin-mobile-drawer-footer`.
+  - Ensure drawer and overlay are hidden by default with `.hidden` class.
+  - _Design: Mobile Responsiveness section_
+
+- [ ] 15. Update `templates/admin.html` to include mobile drawer markup
+  - Add mobile menu button below the masthead: `<div class="admin-mobile-sidebar-toggle">` with toggle button.
+  - Add mobile drawer structure: `<div id="admin-mobile-drawer" class="admin-mobile-drawer hidden">` with header, nav items, and footer.
+  - Add mobile overlay: `<div id="admin-mobile-drawer-overlay" class="admin-mobile-drawer-overlay hidden">`.
+  - Drawer nav items: Submissions, Reports, Users (if main_admin), Admins.
+  - Include close button (✕) in drawer header.
+  - Include logout button in drawer footer.
+  - Ensure drawer is positioned after masthead but before main content.
+  - _Design: Mobile Responsiveness section_
+
+- [ ] 16. Implement mobile menu toggle logic in `static/js/admin.js`
+  - Add event listener to `.admin-sidebar-toggle-btn` to toggle drawer visibility.
+  - When menu button is clicked:
+    - If drawer is hidden: show drawer, show overlay, set `aria-expanded="true"`, prevent body scroll.
+    - If drawer is visible: hide drawer, hide overlay, set `aria-expanded="false"`, restore body scroll.
+  - Add event listener to `.admin-mobile-drawer-overlay` to close drawer on overlay click.
+  - Add event listener to `.admin-mobile-drawer-close` button to close drawer.
+  - Add ESC key listener to close drawer when ESC is pressed.
+  - _Design: Mobile Responsiveness section_
+
+- [ ] 17. Implement mobile menu item selection in `static/js/admin.js`
+  - Add event listeners to all `.admin-mobile-nav-item` buttons.
+  - When a menu item is clicked:
+    - Extract `data-tab` attribute to determine which tab to activate.
+    - Update active tab (same logic as desktop tab switching).
+    - Hide drawer, hide overlay, set `aria-expanded="false"`, restore body scroll.
+    - Load content for selected tab (call appropriate API endpoint).
+  - Ensure active menu item is highlighted with red background and text color.
+  - _Design: Mobile Responsiveness section_
+
+- [ ] 18. Implement mobile logout button in `static/js/admin.js`
+  - Add event listener to `#admin-mobile-logout` button.
+  - On click: clear `localStorage`, redirect to `/`.
+  - _Design: Mobile Responsiveness section_
+
+- [ ] 19. Update desktop layout to use sidebar + main content flex layout
+  - Ensure `.admin-layout` uses `display: flex` on desktop (≥901px).
+  - Sidebar (`.admin-sidebar`) should be visible on desktop.
+  - Main content area should flex to fill remaining space.
+  - Ensure tab bar and content sections are properly positioned in main content area.
+  - _Design: Mobile Responsiveness section_
+
+- [ ] 20. Test mobile responsiveness across breakpoints
+  - Test at 900px and below: verify three-dot menu appears, sidebar hidden, drawer slides in/out smoothly.
+  - Test at 901px and above: verify sidebar visible, three-dot menu hidden, tab bar visible.
+  - Test drawer open/close: verify overlay appears, body scroll prevented, drawer slides smoothly.
+  - Test menu item selection: verify tab switches, drawer closes, content loads.
+  - Test ESC key: verify drawer closes.
+  - Test overlay click: verify drawer closes.
+  - Verify all content is accessible on mobile (no features hidden or simplified).
+  - _Design: Mobile Responsiveness section_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
@@ -187,3 +251,4 @@ Implement a two-tier admin panel for The Varsitarian / Freedom Wall app using th
 - Checkpoints ensure incremental validation
 - The design has no Correctness Properties requiring property-based tests; all properties are example-based integration/unit tests and are not included as coding tasks per the workflow rules
 - The `role` field must be present in `localStorage` (written by `login.js` after a successful login) for the hamburger injection and admin auth guard to work — task 2 (login API change) is a prerequisite for tasks 10 and 11
+- Mobile responsiveness tasks (14-20) build on the existing admin panel implementation and add responsive design for mobile/tablet devices

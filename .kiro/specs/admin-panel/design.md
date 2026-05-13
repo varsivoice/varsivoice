@@ -310,18 +310,46 @@ This is added to the existing JS files (`wall.js`, `freedom_wall.js`, `writers.j
 
 ### Admin Page Layout (`admin.html`)
 
-The page uses the same masthead and CSS classes as existing pages. It has three tab sections, conditionally shown based on role:
+The page uses the same masthead and CSS classes as existing pages. It has three tab sections, conditionally shown based on role.
+
+#### Desktop Layout
 
 ```
 ┌─────────────────────────────────────────────┐
 │  Masthead (same as wall.html)               │
 ├─────────────────────────────────────────────┤
-│  Tab bar: [Submissions] [Reports] [Users*]  │
-│           (* only visible to main_admin)    │
-├─────────────────────────────────────────────┤
-│  Active tab content                         │
+│  [Sidebar]  │  Tab bar: [Submissions] [Reports] [Users*]  │
+│  - Submissions  │  (* only visible to main_admin)    │
+│  - Reports      │  Active tab content                 │
+│  - Users*       │                                     │
+│  - Admins       │                                     │
 └─────────────────────────────────────────────┘
 ```
+
+#### Mobile Layout
+
+On mobile devices (max-width: 900px), the layout transforms to a responsive design:
+
+```
+┌─────────────────────────────────────────────┐
+│  Masthead (same as wall.html)               │
+├─────────────────────────────────────────────┤
+│  [⋮] (three-dot menu button)                │
+│  Positioned below left side of banner       │
+├─────────────────────────────────────────────┤
+│  Active tab content (full width)            │
+│  Default: Submissions tab                   │
+└─────────────────────────────────────────────┘
+```
+
+**Mobile Menu Behavior**:
+- The three-dot menu button (kebab menu) is positioned below the left side of the banner
+- Default view shows Submissions tab content
+- When the three-dot menu is clicked, it expands to show all sidebar options in a drawer
+- The drawer slides in from the left with an overlay
+- Menu items: Submissions, Reports, Users (if main_admin), Admins
+- Clicking a menu item navigates to that tab and closes the drawer
+- The same content is displayed on both mobile and desktop — only the navigation changes
 
 #### Submissions Tab
 
@@ -353,6 +381,233 @@ The page uses the same masthead and CSS classes as existing pages. It has three 
 #### Confirmation Modal
 
 Reuses the existing `.action-modal` pattern from `wall.html` for destructive actions (Delete Content, Transfer Ownership).
+
+---
+
+## Mobile Responsiveness
+
+### Responsive Breakpoints
+
+| Breakpoint | Device Type | Layout |
+|---|---|---|
+| ≥ 901px | Desktop | Sidebar + Main content (flex layout) |
+| ≤ 900px | Tablet/Mobile | Full-width content with three-dot menu |
+
+### Mobile Menu (Three-Dot/Kebab Menu)
+
+**Placement**: Below the left side of the banner, positioned at `0.75rem` padding from the left edge
+
+**Button Styling**:
+- Icon: Three vertical dots (kebab menu icon)
+- Size: 24×24px
+- Background: Transparent
+- Hover state: Light red background (`rgba(163, 29, 29, 0.1)`)
+- Accessibility: `aria-label="Toggle sidebar menu"`, `aria-expanded` attribute
+
+**HTML Structure**:
+```html
+<div class="admin-mobile-sidebar-toggle">
+  <button type="button" id="admin-sidebar-toggle-btn" 
+          class="admin-sidebar-toggle-btn" 
+          aria-label="Toggle sidebar menu" 
+          aria-expanded="false">
+    <!-- Three-dot menu icon SVG -->
+  </button>
+</div>
+```
+
+### Mobile Drawer (Expanded Menu)
+
+**Behavior**:
+- Slides in from the left when the three-dot menu is clicked
+- Covers the full viewport height
+- Includes an overlay behind the drawer (semi-transparent dark background)
+- Can be closed by:
+  - Clicking the close button (✕) in the drawer header
+  - Clicking the overlay
+  - Selecting a menu item
+
+**Drawer Structure**:
+```html
+<div id="admin-mobile-drawer" class="admin-mobile-drawer hidden" 
+     role="dialog" aria-label="Admin menu">
+  <div class="admin-mobile-drawer-header">
+    <span class="admin-mobile-drawer-title">🛡️ Admin Panel</span>
+    <button type="button" id="admin-mobile-drawer-close" 
+            class="admin-mobile-drawer-close" 
+            aria-label="Close menu">✕</button>
+  </div>
+  <nav class="admin-mobile-nav" role="navigation" aria-label="Admin sections">
+    <button type="button" class="admin-mobile-nav-item active" 
+            id="mobile-nav-submissions" data-tab="tab-submissions">
+      <span class="admin-mobile-nav-icon">📝</span>
+      <span>Submissions</span>
+    </button>
+    <button type="button" class="admin-mobile-nav-item" 
+            id="mobile-nav-reports" data-tab="tab-reports">
+      <span class="admin-mobile-nav-icon">🚩</span>
+      <span>Reports</span>
+    </button>
+    <button type="button" class="admin-mobile-nav-item" 
+            id="mobile-nav-users" data-tab="tab-users">
+      <span class="admin-mobile-nav-icon">👥</span>
+      <span>Users</span>
+    </button>
+    <button type="button" class="admin-mobile-nav-item" 
+            id="mobile-nav-admins" data-tab="tab-admins">
+      <span class="admin-mobile-nav-icon">🛡️</span>
+      <span>Admins</span>
+    </button>
+  </nav>
+  <div class="admin-mobile-drawer-footer">
+    <button type="button" id="admin-mobile-logout" class="admin-mobile-logout-btn">
+      <svg><!-- logout icon --></svg>
+      Sign out
+    </button>
+  </div>
+</div>
+<div id="admin-mobile-drawer-overlay" class="admin-mobile-drawer-overlay hidden"></div>
+```
+
+**Drawer Styling**:
+- Width: 280px (fixed)
+- Position: Fixed, left side of viewport
+- Z-index: High (above content)
+- Background: Light mode: `rgba(255, 255, 255, 0.82)` with backdrop blur; Dark mode: `rgba(30, 28, 27, 0.82)`
+- Transform: `translateX(-100%)` when hidden, `translateX(0)` when visible
+- Transition: Smooth slide animation (0.3s)
+- Box shadow: `8px 0 32px rgba(0,0,0,0.18)` when open
+
+**Overlay Styling**:
+- Position: Fixed, covers entire viewport
+- Background: `rgba(0, 0, 0, 0.5)` when visible
+- Pointer events: Auto when visible, none when hidden
+- Z-index: Below drawer, above content
+
+### Mobile Content Display
+
+**Default State**:
+- Submissions tab is displayed by default
+- Desktop sidebar is hidden (`display: none`)
+- Three-dot menu button is visible
+
+**Tab Switching**:
+- Clicking a menu item in the drawer updates the active tab
+- The drawer closes automatically after selection
+- Content updates in-place without page reload
+- Active menu item is highlighted with red background and text color
+
+**Content Visibility**:
+- Only one tab section is visible at a time
+- Tab sections use `display: none` / `display: block` for visibility
+- All content is the same as desktop — no content is hidden or simplified
+
+### CSS Media Query
+
+```css
+@media (max-width: 900px) {
+  /* Show mobile menu button */
+  .admin-mobile-sidebar-toggle {
+    display: block;
+    padding: 0.75rem 0.625rem;
+  }
+
+  /* Hide desktop sidebar */
+  .admin-sidebar {
+    display: none !important;
+  }
+
+  /* Full-width layout */
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Show drawer when not hidden */
+  .admin-mobile-drawer:not(.hidden) {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0,0,0,0.18);
+  }
+
+  /* Show overlay when not hidden */
+  .admin-mobile-drawer-overlay:not(.hidden) {
+    background: rgba(0,0,0,0.5);
+    pointer-events: auto;
+  }
+}
+```
+
+### JavaScript Behavior
+
+**Menu Toggle**:
+```javascript
+// When three-dot menu is clicked
+if (drawer is hidden) {
+  - Show drawer
+  - Show overlay
+  - Set aria-expanded="true"
+  - Prevent body scroll
+} else {
+  - Hide drawer
+  - Hide overlay
+  - Set aria-expanded="false"
+  - Restore body scroll
+}
+```
+
+**Menu Item Selection**:
+```javascript
+// When a menu item is clicked
+- Update active tab
+- Hide drawer
+- Hide overlay
+- Set aria-expanded="false"
+- Restore body scroll
+- Load content for selected tab
+```
+
+**Overlay Click**:
+```javascript
+// When overlay is clicked
+- Hide drawer
+- Hide overlay
+- Set aria-expanded="false"
+- Restore body scroll
+```
+
+**Close Button Click**:
+```javascript
+// When close button (✕) is clicked
+- Hide drawer
+- Hide overlay
+- Set aria-expanded="false"
+- Restore body scroll
+```
+
+### Accessibility
+
+- Menu button has `aria-label="Toggle sidebar menu"`
+- Menu button has `aria-expanded` attribute (true/false)
+- Drawer has `role="dialog"` and `aria-label="Admin menu"`
+- Navigation has `role="navigation"` and `aria-label="Admin sections"`
+- Menu items have `role="menuitem"` (implicit via button)
+- Overlay is not focusable (no tab index)
+- Focus is managed: when drawer opens, focus moves to close button; when drawer closes, focus returns to menu button
+- Keyboard support: ESC key closes the drawer
+
+### Content Parity
+
+**Desktop and Mobile Display the Same Content**:
+- Submissions tab: Same card layout, same action buttons, same sorting/filtering
+- Reports tab: Same grouped layout, same action buttons, same filtering/sorting
+- Users tab: Same table layout (or card layout on mobile), same action buttons
+- Admins tab: Same list layout, same action buttons
+
+**No Content Simplification**:
+- All features available on mobile
+- All action buttons present
+- All filtering and sorting options available
+- Modals and dialogs work the same way
 
 ---
 
