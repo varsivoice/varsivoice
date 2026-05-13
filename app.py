@@ -4,6 +4,7 @@ Run: pip install -r requirements.txt
      python app.py
 """
 import os
+import logging
 import random
 import re
 import sqlite3
@@ -14,6 +15,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from dotenv import load_dotenv
+from werkzeug.exceptions import HTTPException
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw, ImageFont
@@ -25,6 +27,8 @@ from interaction_blocker import InteractionBlocker, require_post_creation_permis
 load_dotenv()
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+app.logger.setLevel(logging.INFO)
 UPLOAD_DIR = os.path.join(app.static_folder, "uploads", "profiles")
 POST_UPLOAD_DIR = os.path.join(app.static_folder, "uploads", "posts")
 COMMENT_UPLOAD_DIR = os.path.join(app.static_folder, "uploads", "comments")
@@ -70,6 +74,7 @@ IMAGES_DIR = os.path.join(app.root_path, "images")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 ALLOWED_DOC_EXTENSIONS = {"pdf", "doc", "docx", "odt", "txt"}
 DB_PATH = os.path.join(app.root_path, "freedom_wall.db")
+_db_initialized = False
 
 # Avatar color palette (matching avatar-color.js)
 AVATAR_COLOR_PALETTE = [
@@ -278,7 +283,41 @@ def get_conn():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    if os.getenv("LOG_SQL", "1") == "1":
+        conn.set_trace_callback(lambda sql: app.logger.info("SQL: %s", sql))
     return conn
+
+
+def redact_auth_payload(payload):
+    redacted = dict(payload or {})
+    if "password" in redacted:
+        redacted["password"] = "[redacted]"
+    return redacted
+
+
+def api_error(message, status=500, code="error", **details):
+    body = {"error": message, "code": code, "status": status}
+    body.update(details)
+    return jsonify(body), status
+
+
+def is_api_request():
+    return request.path.startswith("/api/")
+
+
+@app.errorhandler(HTTPException)
+def handle_http_exception(exc):
+    if is_api_request():
+        return api_error(exc.description or exc.name, exc.code or 500, exc.name)
+    return exc
+
+
+@app.errorhandler(Exception)
+def handle_unhandled_exception(exc):
+    app.logger.exception("Unhandled exception on %s %s", request.method, request.path)
+    if is_api_request():
+        return api_error("Internal server error.", 500, "internal_server_error")
+    raise exc
 
 
 def json_row(row):
@@ -301,6 +340,9 @@ def init_db():
               display_name TEXT NOT NULL,
               photo_url TEXT,
               display_name_changed INTEGER NOT NULL DEFAULT 0,
+              role TEXT NOT NULL DEFAULT 'user',
+              user_id TEXT NULL,
+              account_status TEXT NOT NULL DEFAULT 'active',
               created_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
 
@@ -474,6 +516,28 @@ def init_db():
             pass
     finally:
         conn.close()
+
+
+def ensure_db_initialized():
+    global _db_initialized
+    if _db_initialized:
+        return
+    app.logger.info("Ensuring database schema is initialized")
+    init_db()
+    _db_initialized = True
+
+
+@app.before_request
+def ensure_schema_before_api_request():
+    if request.path.startswith("/api/"):
+        try:
+            ensure_db_initialized()
+        except sqlite3.Error:
+            app.logger.exception("Database initialization failed before %s", request.path)
+            return api_error("Database error while preparing the request.", 500, "database_error")
+        except Exception:
+            app.logger.exception("Schema initialization failed before %s", request.path)
+            return api_error("Internal server error while preparing the request.", 500, "schema_initialization_failed")
 
 
 # --- Pages ---
@@ -1002,13 +1066,19 @@ def signup():
 @app.route("/api/auth/login", methods=["POST"])
 def login():
     data = request.get_json(force=True, silent=True) or {}
+    app.logger.info("Login request payload: %s", redact_auth_payload(data))
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     if not email or not password:
-        return jsonify({"error": "Email and password are required."}), 400
+        return api_error("Email and password are required.", 400, "missing_credentials")
 
-    conn = get_conn()
+    conn = None
     try:
+        conn = get_conn()
+        app.logger.info(
+            "Login SQL: SELECT id, email, password_hash, display_name, photo_url, display_name_changed, created_at, role, user_id FROM users WHERE email = ?; params=%s",
+            (email,),
+        )
         row = conn.execute(
             """
             SELECT id, email, password_hash, display_name, photo_url, display_name_changed, created_at, role, user_id
@@ -1017,9 +1087,9 @@ def login():
             (email,),
         ).fetchone()
         if not row:
-            return jsonify({"error": "This email has no account. Please sign up first."}), 404
+            return api_error("This email has no account. Please sign up first.", 404, "account_not_found")
         if not check_password_hash(row["password_hash"], password):
-            return jsonify({"error": "Incorrect password."}), 401
+            return api_error("Incorrect password.", 401, "invalid_credentials")
         user = {
             "id": row["id"],
             "email": row["email"],
@@ -1031,8 +1101,15 @@ def login():
             "user_id": row["user_id"],
         }
         return jsonify({"user": user})
+    except sqlite3.Error:
+        app.logger.exception("Database error during login for email=%s", email)
+        return api_error("Database error while signing in.", 500, "database_error")
+    except Exception:
+        app.logger.exception("Unexpected error during login for email=%s", email)
+        return api_error("Internal server error while signing in.", 500, "login_failed")
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 @app.route("/api/users/<int:user_id>/delete-account", methods=["DELETE"])
@@ -3025,5 +3102,5 @@ def change_admin_by_email():
 
 
 if __name__ == "__main__":
-    init_db()
+    ensure_db_initialized()
     app.run(debug=True, port=5000)

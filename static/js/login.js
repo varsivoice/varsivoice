@@ -160,7 +160,22 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload || {}),
     }).then(function (r) {
-      return r.json().then(function (body) {
+      return r.text().then(function (text) {
+        var body = {};
+        if (text) {
+          try {
+            body = JSON.parse(text);
+          } catch (parseErr) {
+            var snippet = text.replace(/\s+/g, " ").trim().slice(0, 120);
+            var nonJsonErr = new Error(
+              r.ok
+                ? "The server returned a non-JSON response."
+                : "The server returned a non-JSON error response" + (snippet ? ": " + snippet : ".")
+            );
+            nonJsonErr.status = r.status;
+            throw nonJsonErr;
+          }
+        }
         if (!r.ok) {
           var err = new Error(body.error || "Request failed.");
           err.status = r.status;
