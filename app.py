@@ -320,6 +320,15 @@ def handle_unhandled_exception(exc):
     raise exc
 
 
+@app.after_request
+def prevent_stale_html_and_scripts(response):
+    if request.path.endswith(".js") or response.content_type.startswith("text/html"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
 def json_row(row):
     """Make DB row JSON-serializable."""
     if row is None:
