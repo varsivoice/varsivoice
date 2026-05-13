@@ -11,6 +11,14 @@
   var submitBtn = document.getElementById("submit-auth-btn");
   var mode = "login";
 
+  try {
+    var existingSession = window.AuthSession ? window.AuthSession.get() : null;
+    if (existingSession && existingSession.user_id) {
+      window.location.href = "/wall";
+      return;
+    }
+  } catch (ignoreExistingSession) {}
+
   // Create gallery-style slideshow background with 10 images
   var backdrop = document.querySelector('.login-backdrop');
   if (backdrop) {
@@ -119,7 +127,7 @@
             role: user.role || 'user',
             at: Date.now(),
           };
-          try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData)); } catch (ignore) {}
+          try { (window.AuthSession ? window.AuthSession.set(sessionData) : sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData))); } catch (ignore) {}
           window.location.href = '/wall';
         })
         .catch(function (e) {
@@ -245,7 +253,7 @@
           at: Date.now(),
         };
         try {
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+          (window.AuthSession ? window.AuthSession.set(sessionData) : sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData)));
         } catch (ignore) {}
         window.location.href = "/wall";
       })
@@ -313,3 +321,4 @@
     }
   });
 })();
+

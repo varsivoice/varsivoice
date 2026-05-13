@@ -5,7 +5,7 @@
 
   function ensureSession() {
     try {
-      var raw = sessionStorage.getItem(STORAGE_KEY);
+      var raw = (window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem(STORAGE_KEY));
       if (!raw) {
         window.location.href = "/";
         return false;
@@ -100,7 +100,7 @@
   }
 
   document.getElementById("btn-logout").addEventListener("click", function () {
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    try { (window.AuthSession ? window.AuthSession.clear() : sessionStorage.removeItem(STORAGE_KEY)); } catch (e) {}
     window.location.href = "/";
   });
 
@@ -761,3 +761,4 @@
     });
   });
 })();
+

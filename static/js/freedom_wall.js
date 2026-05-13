@@ -108,7 +108,7 @@
 
   function ensureSession() {
     try {
-      var raw = sessionStorage.getItem(STORAGE_KEY);
+      var raw = (window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem(STORAGE_KEY));
       if (!raw) { window.location.href = "/"; return false; }
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.user_id) { window.location.href = "/"; return false; }
@@ -164,7 +164,7 @@
   document.getElementById("theme-light-btn").addEventListener("click", function () { applyTheme("light"); loadPosts(searchEl.value.trim()); });
   document.getElementById("theme-dark-btn").addEventListener("click", function () { applyTheme("dark"); loadPosts(searchEl.value.trim()); });
   document.getElementById("btn-logout").addEventListener("click", function () {
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    try { (window.AuthSession ? window.AuthSession.clear() : sessionStorage.removeItem(STORAGE_KEY)); } catch (e) {}
     window.location.href = "/";
   });
 
@@ -1229,3 +1229,4 @@
     });
   });
 })();
+

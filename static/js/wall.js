@@ -9,7 +9,7 @@
 
   function ensureSession() {
     try {
-      var raw = sessionStorage.getItem(STORAGE_KEY);
+      var raw = (window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem(STORAGE_KEY));
       if (!raw) {
         window.location.href = "/";
         return false;
@@ -119,7 +119,7 @@
       at: Date.now(),
     };
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(currentUser));
+      (window.AuthSession ? window.AuthSession.set(currentUser) : sessionStorage.setItem(STORAGE_KEY, JSON.stringify(currentUser)));
     } catch (e) {}
   }
 
@@ -268,7 +268,7 @@
 
   document.getElementById("btn-logout").addEventListener("click", function () {
     try {
-      sessionStorage.removeItem(STORAGE_KEY);
+      (window.AuthSession ? window.AuthSession.clear() : sessionStorage.removeItem(STORAGE_KEY));
     } catch (e) {}
     window.location.href = "/";
   });
@@ -1754,3 +1754,4 @@
     });
   });
 })();
+

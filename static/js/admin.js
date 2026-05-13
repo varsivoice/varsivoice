@@ -3,7 +3,7 @@
   var STORAGE_KEY = 'ub_session';
   var currentUser = null;
   try {
-    var raw = sessionStorage.getItem(STORAGE_KEY);
+    var raw = (window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem(STORAGE_KEY));
     if (!raw) { window.location.href = '/'; return; }
     currentUser = JSON.parse(raw);
     if (!currentUser || !currentUser.user_id) { window.location.href = '/'; return; }
@@ -24,7 +24,7 @@
   }
 
   var roleLabel = document.getElementById('admin-role-label');
-  if (roleLabel) roleLabel.textContent = currentUser.role === 'main_admin' ? 'Main Admin' : 'Co-Admin';
+  if (roleLabel) roleLabel.textContent = currentUser.role === 'main_admin' ? 'Admin' : 'Moderator';
 
   var headerAvatarLink = document.getElementById('header-avatar-link');
   var headerAvatar = document.getElementById('header-avatar');
@@ -114,7 +114,7 @@
 
   if (mobileLogoutBtn) {
     mobileLogoutBtn.addEventListener('click', function() {
-      try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      try { (window.AuthSession ? window.AuthSession.clear() : sessionStorage.removeItem(STORAGE_KEY)); } catch (e) {}
       window.location.href = '/';
     });
   }
@@ -380,13 +380,13 @@
 
   function renderMobileAdmins(data) {
     if (!data || data.length === 0) {
-      mobileContentBody.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">No admins found.</p>';
+      mobileContentBody.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">No admin team members found.</p>';
       return;
     }
     var html = '<div class="admin-mobile-list">';
     data.forEach(function(item) {
       var roleColors = {'main_admin':'#fce7f3','co_admin':'#e0f2fe'};
-      var roleLabels = {'main_admin':'👑 Main Admin','co_admin':'👤 Co-Admin'};
+      var roleLabels = {'main_admin':'👑 Admin','co_admin':'👤 Moderator'};
       html += '<div class="admin-mobile-item">' +
         '<div class="admin-mobile-item-header">' +
         '<span class="admin-mobile-item-cat" style="background:' + (roleColors[item.role] || '#f3f4f6') + '">' + (roleLabels[item.role] || item.role) + '</span>' +
@@ -394,7 +394,7 @@
         '<p class="admin-mobile-item-author">' + escapeHtml(item.name || 'User #' + item.user_id) + '</p>' +
         '<div class="admin-mobile-item-actions">';
       if (currentUser.role === 'main_admin' && item.role !== 'main_admin') {
-        html += '<button type="button" class="admin-mobile-action-btn admin-mobile-remove-admin" data-id="' + item.user_id + '">✕ Remove Admin</button>';
+        html += '<button type="button" class="admin-mobile-action-btn admin-mobile-remove-admin" data-id="' + item.user_id + '">✕ Remove Moderator</button>';
       }
       html += '</div></div>';
     });
@@ -563,7 +563,7 @@
   }
   if (adminPanelItem) adminPanelItem.classList.add('hidden');
   var logoutBtn = document.getElementById('btn-logout');
-  if (logoutBtn) logoutBtn.addEventListener('click', function () { try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {} window.location.href = '/'; });
+  if (logoutBtn) logoutBtn.addEventListener('click', function () { try { (window.AuthSession ? window.AuthSession.clear() : sessionStorage.removeItem(STORAGE_KEY)); } catch (e) {} window.location.href = '/'; });
 
   // Action modal
   var actionModal = document.getElementById('action-modal');
@@ -1497,30 +1497,30 @@
     if (!filtered.length) { listEl.innerHTML = '<p class="admin-section-status">' + (query ? 'No users match your search.' : 'No users found.') + '</p>'; return; }
     var admins = filtered.filter(function (u) { return u.role === 'main_admin' || u.role === 'co_admin'; });
     var regulars = filtered.filter(function (u) { return u.role === 'user'; });
-    if (admins.length) { var ah = document.createElement('p'); ah.className = 'users-section-label'; ah.textContent = 'Current Admins'; listEl.appendChild(ah); admins.forEach(function (u) { listEl.appendChild(buildUserRow(u)); }); }
+    if (admins.length) { var ah = document.createElement('p'); ah.className = 'users-section-label'; ah.textContent = 'Current Admins & Moderators'; listEl.appendChild(ah); admins.forEach(function (u) { listEl.appendChild(buildUserRow(u)); }); }
     if (regulars.length) { var rh = document.createElement('p'); rh.className = 'users-section-label'; rh.textContent = query ? 'Other Users' : 'Regular Users'; listEl.appendChild(rh); regulars.forEach(function (u) { listEl.appendChild(buildUserRow(u)); }); }
   }
 
   function roleBadgeClass(r) { return r === 'main_admin' ? 'role-badge--main-admin' : r === 'co_admin' ? 'role-badge--co-admin' : 'role-badge--user'; }
-  function roleBadgeLabel(r) { return r === 'main_admin' ? '&#128081; Main Admin' : r === 'co_admin' ? '&#128309; Co-Admin' : '&#9898; User'; }
+  function roleBadgeLabel(r) { return r === 'main_admin' ? '&#128081; Admin' : r === 'co_admin' ? '&#128309; Moderator' : '&#9898; User'; }
 
   function buildUserRow(u) {
     var row = document.createElement('div'); row.className = 'user-row'; row.dataset.userId = String(u.id);
     var actionHtml = '';
     if (u.id !== currentUser.user_id) {
-      // Only main admin can see transfer options
+      // Only the top-level admin can see transfer options
       if (currentUser.role === 'main_admin') {
         if (u.role === 'user') {
-          actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="make-co-admin">Make Co-Admin</button>' +
+          actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="make-co-admin">Make Moderator</button>' +
                       '<button type="button" class="btn-sm btn-role-action btn-danger" data-action="transfer" style="margin-left:0.5rem;">Hand Over Ownership</button>';
         } else if (u.role === 'co_admin') {
-          actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="remove-co-admin">Remove Co-Admin</button>' +
+          actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="remove-co-admin">Remove Moderator</button>' +
                       '<button type="button" class="btn-sm btn-role-action btn-danger" data-action="transfer" style="margin-left:0.5rem;">Hand Over Ownership</button>';
         }
       } else {
-        // Co-admins can only manage regular users
-        if (u.role === 'user') actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="make-co-admin">Make Co-Admin</button>';
-        else if (u.role === 'co_admin') actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="remove-co-admin">Remove Co-Admin</button>';
+        // Moderators can only manage regular users
+        if (u.role === 'user') actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="make-co-admin">Make Moderator</button>';
+        else if (u.role === 'co_admin') actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="remove-co-admin">Remove Moderator</button>';
       }
       
     }
@@ -1759,14 +1759,14 @@
         // Proceed with transfer
         openActionModal({
           title: 'Hand Over Ownership',
-          message: 'Transfer Main Admin to ' + u.display_name + '? You will become a regular user and lose all admin access. There is a 24-hour cooldown before ownership can be transferred again.',
+          message: 'Transfer Admin ownership to ' + u.display_name + '? You will become a regular user and lose all admin access. There is a 24-hour cooldown before ownership can be transferred again.',
           confirmText: 'Hand Over', danger: true,
           onConfirm: function (ctx) {
             api('/api/admin/transfer-ownership', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUser.user_id, target_user_id: u.id }) })
               .then(function () {
                 ctx.close();
                 currentUser.role = 'user';
-                try { var s = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}'); s.role = 'user'; sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) {}
+                try { var s = JSON.parse((window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem(STORAGE_KEY)) || '{}'); s.role = 'user'; (window.AuthSession ? window.AuthSession.set(s) : sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s))); } catch (e) {}
                 window.location.href = '/wall';
               })
               .catch(function (e) { ctx.setError(e.message || 'Could not transfer.'); });
@@ -2216,3 +2216,6 @@
     }
   });
 })();
+
+
+

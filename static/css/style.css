@@ -7964,6 +7964,70 @@ a.hamburger-menu-item:hover {
   .profile-card .input-search {
     margin-bottom: 0.5rem;
   }
+
+  .profile-hero-card {
+    padding: 0.9rem;
+  }
+
+  .profile-hero {
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .profile-avatar-square {
+    width: 76px;
+    height: 76px;
+    border-radius: 10px;
+    font-size: 1.45rem;
+  }
+
+  .profile-hero-info {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .profile-hero-name {
+    max-width: 100%;
+    font-size: 1.25rem;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .profile-hero-joined {
+    font-size: 0.78rem;
+  }
+
+  .profile-posts-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.55rem;
+    padding: 0 0.15rem;
+    margin: 1.1rem 0 0.85rem;
+  }
+
+  .profile-posts-title {
+    flex: 0 0 auto;
+    font-size: 1.05rem;
+    line-height: 1.2;
+  }
+
+  .profile-filter-controls {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
+    gap: 0.35rem;
+  }
+
+  .profile-filter-select {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 9rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.76rem;
+  }
   
   .default-profile-gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -9711,6 +9775,70 @@ a.hamburger-menu-item:hover {
 
 .back-to-top:active {
   transform: translateY(0);
+}
+
+.notif-moderation-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(20, 20, 20, 0.48);
+}
+
+.notif-moderation-card {
+  position: relative;
+  width: min(92vw, 420px);
+  padding: 1.35rem;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(122, 21, 21, 0.16);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+}
+
+.notif-moderation-close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(122, 21, 21, 0.08);
+  color: #7a1515;
+  cursor: pointer;
+}
+
+.notif-moderation-kicker {
+  margin: 0 2rem 0.4rem 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #9f1f1f;
+}
+
+.notif-moderation-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  color: #2b1717;
+}
+
+.notif-moderation-message {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  color: #4a3434;
+}
+
+[data-theme="dark"] .notif-moderation-card {
+  background: #1f1c1c;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .notif-moderation-title,
+[data-theme="dark"] .notif-moderation-message {
+  color: #f5eeee;
 }
 
 /* ========== MOBILE RESPONSIVENESS FOR ADMIN PANEL ========== */

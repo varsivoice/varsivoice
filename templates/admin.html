@@ -105,7 +105,7 @@
       </button>
       <button type="button" class="admin-mobile-nav-item" id="mobile-nav-admins" data-tab="tab-admins">
         <span class="admin-mobile-nav-icon">🛡️</span>
-        <span>Admins</span>
+        <span>Admin Team</span>
       </button>
     </nav>
     <div class="admin-mobile-drawer-footer">
@@ -140,7 +140,7 @@
           </button>
           <button type="button" class="admin-sidenav-item" id="sidenav-admins" data-tab="tab-admins">
             <span class="admin-sidenav-icon">🛡️</span>
-            <span>Admins</span>
+            <span>Admin Team</span>
           </button>
         </nav>
       </div>
@@ -254,10 +254,10 @@
         <div id="restrictions-list" class="admin-list"></div>
       </section>
 
-      <!-- Admins section -->
+      <!-- Admin team section -->
       <section class="admin-section" id="section-admins" role="tabpanel">
         <div class="admin-section-toolbar">
-          <h2 class="admin-section-heading">🛡️ Admins</h2>
+          <h2 class="admin-section-heading">🛡️ Admin Team</h2>
           <div class="admin-search-bar admin-search-compact">
             <input type="search" id="users-search" class="admin-search-input" placeholder="Search by name or user ID…" autocomplete="off" />
           </div>
@@ -358,7 +358,10 @@
   </button>
 
   <script src="{{ url_for('static', filename='js/safe-json.js', v='hard-json-2') }}"></script>
+  <script src="{{ url_for('static', filename='js/auth-session.js', v='shared-session-1') }}"></script>
   <script src="{{ url_for('static', filename='js/notif.js', v='hard-json-2') }}"></script>
   <script src="{{ url_for('static', filename='js/admin.js', v='hard-json-2') }}"></script>
 </body>
 </html>
+
+

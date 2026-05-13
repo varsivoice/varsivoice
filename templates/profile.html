@@ -147,10 +147,29 @@
     </div>
   </div>
 
+  <button type="button" id="back-to-top" class="back-to-top" aria-label="Back to top">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
+  </button>
+
   <script src="{{ url_for('static', filename='js/safe-json.js', v='hard-json-2') }}"></script>
+  <script src="{{ url_for('static', filename='js/auth-session.js', v='shared-session-1') }}"></script>
   <script src="{{ url_for('static', filename='js/avatar-color.js', v='hard-json-2') }}"></script>
   <script src="{{ url_for('static', filename='js/notif.js', v='hard-json-2') }}"></script>
   <script src="{{ url_for('static', filename='js/restriction-status.js', v='hard-json-2') }}"></script>
   <script src="{{ url_for('static', filename='js/profile.js', v='hard-json-2') }}"></script>
+  <script>
+    (function() {
+      var btn = document.getElementById('back-to-top');
+      if (btn) {
+        window.addEventListener('scroll', function() {
+          btn.classList.toggle('visible', window.scrollY > 400);
+        });
+        btn.addEventListener('click', function() {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
+

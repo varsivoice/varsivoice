@@ -45,6 +45,28 @@
       }).catch(function () {});
     }
 
+    function openModerationBubble(config) {
+      var existing = document.querySelector('.notif-moderation-modal');
+      if (existing) existing.remove();
+
+      var overlay = document.createElement('div');
+      overlay.className = 'notif-moderation-modal';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.innerHTML =
+        '<div class="notif-moderation-card">' +
+        '<button type="button" class="notif-moderation-close" aria-label="Close">x</button>' +
+        '<p class="notif-moderation-kicker">' + escapeHtml(config.kicker || 'Notice') + '</p>' +
+        '<h3 class="notif-moderation-title">' + escapeHtml(config.title || 'Notification') + '</h3>' +
+        '<p class="notif-moderation-message">' + escapeHtml(config.message || '') + '</p>' +
+        '</div>';
+
+      document.body.appendChild(overlay);
+      function close() { if (document.body.contains(overlay)) overlay.remove(); }
+      overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+      overlay.querySelector('.notif-moderation-close').addEventListener('click', close);
+    }
+
     function renderNotifications(notifs) {
       if (!notifList) return;
       if (!notifs.length) {
@@ -83,6 +105,26 @@
             if (rxs.length < (n.comment_content || '').length) rxs += '…';
             if (rxs) snippet = rxs;
           }
+        } else if (n.notif_type === 'warning') {
+          text = '<strong>WARNING</strong>';
+          var ws = (n.comment_content || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+          if (ws.length < (n.comment_content || '').length) ws += '...';
+          if (ws) snippet = ws;
+        } else if (n.notif_type === 'deleted_post') {
+          text = '<strong>DELETED POST</strong>';
+          var ds = (n.comment_content || 'Your post got taken down by the moderators.').replace(/\s+/g, ' ').trim().slice(0, 140);
+          if (ds.length < (n.comment_content || '').length) ds += '...';
+          if (ds) snippet = ds;
+        } else if (n.notif_type === 'restriction') {
+          text = '<strong>' + escapeHtml(n.actor_name || 'An admin') + '</strong> restricted your account after repeated warnings';
+        } else if (n.notif_type === 'manual_restriction') {
+          text = '<strong>' + escapeHtml(n.actor_name || 'An admin') + '</strong> restricted your account';
+        } else if (n.notif_type === 'restriction_modified') {
+          text = '<strong>' + escapeHtml(n.actor_name || 'An admin') + '</strong> updated your account restriction';
+        } else if (n.notif_type === 'restriction_lifted') {
+          text = '<strong>' + escapeHtml(n.actor_name || 'An admin') + '</strong> lifted your account restriction';
+        } else {
+          text = '<strong>' + escapeHtml(n.actor_name || 'Someone') + '</strong> sent you a notification';
         }
 
         if (snippet) text += ' <span class="notif-snippet">"' + escapeHtml(snippet) + '"</span>';
@@ -94,7 +136,21 @@
           '</div>' +
           (!n.is_read ? '<span class="notif-dot" aria-hidden="true"></span>' : '');
 
-        if (n.post_id) {
+        if (n.notif_type === 'warning' || n.notif_type === 'deleted_post') {
+          item.style.cursor = 'pointer';
+          item.addEventListener('click', function () {
+            markNotifRead(n.id);
+            item.classList.remove('notif-unread');
+            var dot = item.querySelector('.notif-dot');
+            if (dot) dot.remove();
+            notifPanel.classList.add('hidden');
+            openModerationBubble({
+              kicker: n.notif_type === 'warning' ? 'Official warning' : 'Moderation action',
+              title: n.notif_type === 'warning' ? 'Warning' : 'Deleted Post',
+              message: n.comment_content || (n.notif_type === 'warning' ? 'Your content violated our community guidelines.' : 'Your post got taken down by the moderators.')
+            });
+          });
+        } else if (n.post_id) {
           item.style.cursor = 'pointer';
           item.addEventListener('click', function () {
             markNotifRead(n.id);
@@ -172,3 +228,4 @@
 
   global.initNotifications = initNotifications;
 })(window);
+

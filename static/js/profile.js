@@ -9,7 +9,7 @@
 
   function ensureSession() {
     try {
-      var raw = sessionStorage.getItem(STORAGE_KEY);
+      var raw = (window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem(STORAGE_KEY));
       if (!raw) { window.location.href = "/"; return false; }
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.user_id) { window.location.href = "/"; return false; }
@@ -126,7 +126,7 @@
   var logoutBtn = document.getElementById("btn-logout");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", function () {
-      try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      try { (window.AuthSession ? window.AuthSession.clear() : sessionStorage.removeItem(STORAGE_KEY)); } catch (e) {}
       window.location.href = "/";
     });
   }
@@ -722,10 +722,10 @@
           currentUser.display_name = res.user.display_name;
           currentUser.display_name_changed = !!res.user.display_name_changed;
           try {
-            var sess = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
+            var sess = JSON.parse((window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem(STORAGE_KEY)) || '{}');
             sess.display_name = res.user.display_name;
             sess.display_name_changed = !!res.user.display_name_changed;
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sess));
+            (window.AuthSession ? window.AuthSession.set(sess) : sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sess)));
           } catch (e) {}
         }
 
@@ -747,9 +747,9 @@
         if (photoRes && photoRes.user) {
           currentUser.photo_url = photoRes.user.photo_url;
           try {
-            var sess = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
+            var sess = JSON.parse((window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem(STORAGE_KEY)) || '{}');
             sess.photo_url = photoRes.user.photo_url;
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sess));
+            (window.AuthSession ? window.AuthSession.set(sess) : sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sess)));
           } catch (e) {}
         }
         document.body.removeChild(overlay);
@@ -867,3 +867,4 @@
     });
   });
 })();
+

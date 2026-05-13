@@ -289,6 +289,8 @@ def get_conn():
 
 
 def redact_auth_payload(payload):
+    if not isinstance(payload, dict):
+        return {"_invalid_payload_type": type(payload).__name__}
     redacted = dict(payload or {})
     if "password" in redacted:
         redacted["password"] = "[redacted]"
@@ -547,6 +549,16 @@ def ensure_schema_before_api_request():
         except Exception:
             app.logger.exception("Schema initialization failed before %s", request.path)
             return api_error("Internal server error while preparing the request.", 500, "schema_initialization_failed")
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.is_json:
+            payload = request.get_json(silent=True)
+            if payload is not None and not isinstance(payload, dict):
+                app.logger.warning(
+                    "Rejected non-object JSON payload on %s %s: %s",
+                    request.method,
+                    request.path,
+                    type(payload).__name__,
+                )
+                return api_error("JSON request body must be an object.", 400, "invalid_json_body")
 
 
 # --- Pages ---
@@ -2847,9 +2859,42 @@ def admin_delete_content():
         return jsonify({"error": "target_id must be an integer"}), 400
     conn = get_conn()
     try:
+        owner_row = None
+        moderation_message = None
         if target_type == "post":
+            owner_row = conn.execute(
+                "SELECT user_id, content FROM posts WHERE id = ?",
+                (target_id,),
+            ).fetchone()
+            if not owner_row:
+                return jsonify({"error": "Content not found."}), 404
+            moderation_message = "Your post got taken down by the moderators."
+            _create_notification(
+                conn,
+                owner_row["user_id"],
+                user_row["id"],
+                "deleted_post",
+                post_id=target_id,
+                comment_content=moderation_message,
+            )
             conn.execute("DELETE FROM posts WHERE id = ?", (target_id,))
         else:
+            owner_row = conn.execute(
+                "SELECT user_id, post_id, content FROM comments WHERE id = ?",
+                (target_id,),
+            ).fetchone()
+            if not owner_row:
+                return jsonify({"error": "Content not found."}), 404
+            moderation_message = "Your comment got taken down by the moderators."
+            _create_notification(
+                conn,
+                owner_row["user_id"],
+                user_row["id"],
+                "deleted_post",
+                post_id=owner_row["post_id"],
+                comment_id=target_id,
+                comment_content=moderation_message,
+            )
             conn.execute("DELETE FROM comments WHERE id = ?", (target_id,))
         conn.execute(
             "DELETE FROM reports WHERE target_type = ? AND target_id = ?",
@@ -2910,7 +2955,8 @@ def admin_issue_warning():
         # Create a notification for the user
         _create_notification(conn, content_owner_id, user_row["id"], "warning", 
                            post_id=target_id if target_type == "post" else None,
-                           comment_id=target_id if target_type == "comment" else None)
+                           comment_id=target_id if target_type == "comment" else None,
+                           comment_content=message)
         
         # Dismiss all reports for this content
         conn.execute(
@@ -2946,7 +2992,7 @@ def admin_list_users():
     if err:
         return err
     if user_row["role"] != MAIN_ADMIN_ROLE:
-        return jsonify({"error": "Main admin access required."}), 403
+        return jsonify({"error": "Admin access required."}), 403
     conn = get_conn()
     try:
         rows = conn.execute(
@@ -2964,7 +3010,7 @@ def admin_update_user_role(target_user_id):
     if err:
         return err
     if user_row["role"] != MAIN_ADMIN_ROLE:
-        return jsonify({"error": "Main admin access required."}), 403
+        return jsonify({"error": "Admin access required."}), 403
     if user_row["id"] == target_user_id:
         return jsonify({"error": "Cannot change your own role."}), 400
     role = (data.get("role") or "").strip()

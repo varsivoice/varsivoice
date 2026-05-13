@@ -44,9 +44,9 @@ class RestrictionStatusDisplay {
      * Get current user ID from the page
      */
     getCurrentUserId() {
-        // Try to get from sessionStorage (primary method)
+        // Try to get from shared auth session (primary method)
         try {
-            const sessionData = sessionStorage.getItem('ub_session');
+            const sessionData = window.AuthSession ? window.AuthSession.getRaw() : sessionStorage.getItem('ub_session');
             if (sessionData) {
                 const parsed = JSON.parse(sessionData);
                 if (parsed && parsed.user_id) {
@@ -55,7 +55,7 @@ class RestrictionStatusDisplay {
                 }
             }
         } catch (e) {
-            console.log('Could not get user ID from sessionStorage:', e);
+            console.log('Could not get user ID from auth session:', e);
         }
         
         // Try to get from global variable (if set by the page)
