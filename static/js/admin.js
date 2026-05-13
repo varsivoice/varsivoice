@@ -17,8 +17,10 @@
   if (currentUser.role === 'co_admin') {
     var usersNav = document.getElementById('sidenav-users');
     var usersSection = document.getElementById('section-users');
+    var mobileUsersNav = document.getElementById('mobile-nav-users');
     if (usersNav) usersNav.style.display = 'none';
     if (usersSection) usersSection.style.display = 'none';
+    if (mobileUsersNav) mobileUsersNav.style.display = 'none';
   }
 
   var roleLabel = document.getElementById('admin-role-label');
@@ -48,7 +50,518 @@
   document.addEventListener('click', closeHamburger);
   if (hMenu) hMenu.addEventListener('click', function (e) { e.stopPropagation(); });
   var adminPanelItem = document.getElementById('admin-panel-item');
-  if (adminPanelItem) adminPanelItem.classList.remove('hidden');
+
+  // Mobile admin drawer
+  var mobileMenuBtn = document.getElementById('admin-sidebar-toggle-btn');
+  var mobileDrawer = document.getElementById('admin-mobile-drawer');
+  var mobileDrawerOverlay = document.getElementById('admin-mobile-drawer-overlay');
+  var mobileDrawerClose = document.getElementById('admin-mobile-drawer-close');
+  var mobileLogoutBtn = document.getElementById('admin-mobile-logout');
+  var mobileCurrentTitle = document.getElementById('admin-mobile-current-title');
+  var mobileTopbarActions = document.getElementById('admin-mobile-topbar-actions');
+
+  function closeMobileDrawer() {
+    if (mobileDrawer) {
+      mobileDrawer.classList.add('hidden');
+      mobileDrawer.setAttribute('aria-hidden', 'true');
+    }
+    if (mobileDrawerOverlay) mobileDrawerOverlay.classList.add('hidden');
+    if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (mobileDrawer.classList.contains('hidden')) {
+        // Drawer is closed - open it
+        mobileDrawer.classList.remove('hidden');
+        mobileDrawer.setAttribute('aria-hidden', 'false');
+        mobileDrawerOverlay.classList.remove('hidden');
+        if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      } else {
+        // Drawer is open - close it
+        mobileDrawer.classList.add('hidden');
+        mobileDrawer.setAttribute('aria-hidden', 'true');
+        mobileDrawerOverlay.classList.add('hidden');
+        if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+
+  if (mobileDrawerClose) {
+    mobileDrawerClose.addEventListener('click', function() {
+      mobileDrawer.classList.add('hidden');
+      mobileDrawer.setAttribute('aria-hidden', 'true');
+      mobileDrawerOverlay.classList.add('hidden');
+      if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    });
+  }
+
+  if (mobileDrawerOverlay) {
+    mobileDrawerOverlay.addEventListener('click', closeMobileDrawer);
+  }
+
+  // ESC key closes mobile drawer
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && mobileDrawer && !mobileDrawer.classList.contains('hidden')) {
+      closeMobileDrawer();
+    }
+  });
+
+  if (mobileLogoutBtn) {
+    mobileLogoutBtn.addEventListener('click', function() {
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      window.location.href = '/';
+    });
+  }
+
+  // Mobile drawer nav items
+  var mobileNavItems = document.querySelectorAll('.admin-mobile-nav-item');
+  var mobileContent = document.getElementById('admin-mobile-content');
+  var mobileContentBody = document.getElementById('admin-mobile-content-body');
+  var mobileBackBtn = document.getElementById('admin-mobile-back');
+  var mobileSectionNav = document.getElementById('admin-mobile-section-nav');
+  var mobileHero = document.querySelector('.admin-mobile-hero');
+  var mobileHeroTitle = document.getElementById('admin-mobile-hero-title');
+  var mobileHeroTagline = document.querySelector('.admin-mobile-hero-tagline');
+  var currentMobileSection = 'submissions';
+  var currentMobileSubTab = 'pending';
+
+  function showMobileContent(section) {
+    if (!mobileContent || !mobileContentBody) return;
+    var sectionKey = section.replace('tab-', '');
+    currentMobileSection = sectionKey;
+    closeMobileDrawer();
+    mobileContent.classList.remove('hidden');
+    mobileContent.setAttribute('aria-hidden', 'false');
+
+    var taglines = {
+      'submissions': 'Review pending and approved work',
+      'reports': 'Handle flagged content',
+      'users': 'Manage user restrictions',
+      'admins': 'Manage admin accounts'
+    };
+
+    // Update hero title and tagline
+    if (mobileHeroTitle) mobileHeroTitle.textContent = 'Admin Panel';
+    if (mobileHeroTagline) mobileHeroTagline.textContent = taglines[sectionKey] || '';
+
+    // Load content with current sub-tab
+    loadMobileContent(sectionKey, currentMobileSubTab);
+  }
+
+  function closeMobileContent() {
+    if (!mobileContent) return;
+    mobileContent.classList.add('hidden');
+    mobileContent.setAttribute('aria-hidden', 'true');
+  }
+
+  function loadMobileContent(section, subtab) {
+    currentMobileSubTab = subtab;
+    if (!mobileContentBody) {
+      if (section === 'submissions') {
+        currentSubmissionTab = subtab || currentSubmissionTab || 'pending';
+        loadSubmissions();
+      } else if (section === 'reports') {
+        loadReports();
+      } else if (section === 'users') {
+        loadRestrictions();
+      } else if (section === 'admins') {
+        loadUsers();
+      }
+      return;
+    }
+    mobileContentBody.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">Loading...</p>';
+
+    var xhr = new XMLHttpRequest();
+    if (section === 'submissions') {
+      var url = '/api/writers/submissions?status=' + encodeURIComponent(subtab);
+      xhr.open('GET', url, true);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            renderMobileSubmissions(data, subtab);
+          } catch(e) {
+            mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Error loading data.</p>';
+          }
+        } else {
+          mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Failed to load.</p>';
+        }
+      };
+      xhr.onerror = function() {
+        mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Network error.</p>';
+      };
+      xhr.send();
+    } else if (section === 'reports') {
+      xhr.open('GET', '/api/admin/reports?user_id=' + currentUser.user_id, true);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            renderMobileReports(data);
+          } catch(e) {
+            mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Error loading data.</p>';
+          }
+        } else {
+          mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Failed to load.</p>';
+        }
+      };
+      xhr.onerror = function() {
+        mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Network error.</p>';
+      };
+      xhr.send();
+    } else if (section === 'users') {
+      xhr.open('GET', '/api/admin/restrictions?user_id=' + currentUser.user_id, true);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            renderMobileUsers(data);
+          } catch(e) {
+            mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Error loading data.</p>';
+          }
+        } else {
+          mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Failed to load.</p>';
+        }
+      };
+      xhr.onerror = function() {
+        mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Network error.</p>';
+      };
+      xhr.send();
+    } else if (section === 'admins') {
+      xhr.open('GET', '/api/admin/users?user_id=' + currentUser.user_id, true);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            renderMobileAdmins(data);
+          } catch(e) {
+            mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Error loading data.</p>';
+          }
+        } else {
+          mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Failed to load.</p>';
+        }
+      };
+      xhr.onerror = function() {
+        mobileContentBody.innerHTML = '<p class="error-msg" style="padding:2rem;">Network error.</p>';
+      };
+      xhr.send();
+    }
+  }
+
+  function renderMobileSubmissions(data, status) {
+    if (!data || data.length === 0) {
+      mobileContentBody.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">' + (status === 'pending' ? 'No pending submissions.' : 'No approved submissions.') + '</p>';
+      return;
+    }
+    var html = '<div class="admin-mobile-list">';
+    data.forEach(function(item) {
+      var catColors = {'Poetry':'#e8d5b7','Essay':'#d5e8d4','Short Story':'#dae8fc','Article':'#f8cecc','Opinion':'#fff2cc'};
+      var catColor = catColors[item.category] || '#e1d5e7';
+      html += '<div class="admin-mobile-item" data-id="' + item.id + '">' +
+        '<div class="admin-mobile-item-header">' +
+        '<span class="admin-mobile-item-cat" style="background:' + catColor + '">' + escapeHtml(item.category) + '</span>' +
+        '<span class="admin-mobile-item-date">' + formatDate(item.submitted_at || item.created_at) + '</span>' +
+        '</div>' +
+        '<h3 class="admin-mobile-item-title">' + escapeHtml(item.title) + '</h3>' +
+        '<p class="admin-mobile-item-author">by ' + escapeHtml(item.author_name || 'Anonymous') + '</p>' +
+        '<p class="admin-mobile-item-preview">' + escapeHtml((item.content || '').substring(0, 120)) + '...</p>' +
+        '<div class="admin-mobile-item-actions">';
+      if (status === 'pending') {
+        html += '<button type="button" class="admin-mobile-action-btn admin-mobile-approve" data-id="' + item.id + '">✅ Approve</button>' +
+                '<button type="button" class="admin-mobile-action-btn admin-mobile-view" data-id="' + item.id + '">👁 View</button>';
+      } else {
+        html += '<button type="button" class="admin-mobile-action-btn admin-mobile-view" data-id="' + item.id + '">👁 View</button>';
+      }
+      html += '</div></div>';
+    });
+    html += '</div>';
+    mobileContentBody.innerHTML = html;
+
+    // Wire up buttons
+    mobileContentBody.querySelectorAll('.admin-mobile-approve').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = this.dataset.id;
+        var fd = new FormData();
+        fd.append('user_id', currentUser.user_id);
+        fd.append('action', 'approve');
+        fetch('/api/writers/submissions/' + id, {method:'POST', body: fd})
+          .then(function(r){ return r.json(); })
+          .then(function() {
+            loadMobileContent('submissions', 'pending');
+          })
+          .catch(function() {});
+      });
+    });
+
+    mobileContentBody.querySelectorAll('.admin-mobile-view').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = this.dataset.id;
+        showSubmissionModal(id);
+      });
+    });
+  }
+
+  function renderMobileReports(data) {
+    if (!data || data.length === 0) {
+      mobileContentBody.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">No reports found.</p>';
+      return;
+    }
+    var html = '<div class="admin-mobile-list">';
+    data.forEach(function(group) {
+      var reasonLabels = {'spam':'🚫 Spam','bullying':'👊 Bullying','inappropriate':'🔞 Inappropriate','harassment':'😡 Harassment','other':'📋 Other'};
+      var reasonDisplay = reasonLabels[group.primary_reason] || group.primary_reason || 'Unknown';
+      html += '<div class="admin-mobile-item admin-mobile-report-item">' +
+        '<div class="admin-mobile-item-header">' +
+        '<span class="admin-mobile-item-cat">' + reasonDisplay + '</span>' +
+        '<span class="admin-mobile-item-count">' + group.report_count + ' report' + (group.report_count > 1 ? 's' : '') + '</span>' +
+        '</div>' +
+        '<p class="admin-mobile-item-preview">' + escapeHtml((group.content_preview || '').substring(0, 100)) + '...</p>' +
+        '<div class="admin-mobile-item-actions">' +
+        '<button type="button" class="admin-mobile-action-btn admin-mobile-view-report" data-id="' + group.target_id + '" data-type="' + group.target_type + '">👁 View</button>' +
+        '<button type="button" class="admin-mobile-action-btn admin-mobile-dismiss" data-id="' + group.target_id + '" data-type="' + group.target_type + '">✓ Dismiss</button>' +
+        '</div></div>';
+    });
+    html += '</div>';
+    mobileContentBody.innerHTML = html;
+
+    // Wire up buttons
+    mobileContentBody.querySelectorAll('.admin-mobile-view-report').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = this.dataset.id;
+        var type = this.dataset.type;
+        viewReport(id, type);
+      });
+    });
+
+    mobileContentBody.querySelectorAll('.admin-mobile-dismiss').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = this.dataset.id;
+        var type = this.dataset.type;
+        dismissReports(id, type);
+      });
+    });
+  }
+
+  function renderMobileUsers(data) {
+    if (!data || data.length === 0) {
+      mobileContentBody.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">No restrictions found.</p>';
+      return;
+    }
+    var html = '<div class="admin-mobile-list">';
+    data.forEach(function(item) {
+      var isActive = item.is_active !== false;
+      html += '<div class="admin-mobile-item">' +
+        '<div class="admin-mobile-item-header">' +
+        '<span class="admin-mobile-item-cat" style="background:' + (isActive ? '#fce7f3' : '#f3f4f6') + '">' + (isActive ? '⏳ Active' : '✓ Expired') + '</span>' +
+        '</div>' +
+        '<p class="admin-mobile-item-author">' + escapeHtml(item.user_name || 'User #' + item.user_id) + '</p>' +
+        '<p class="admin-mobile-item-preview">' + escapeHtml((item.reason || '').substring(0, 100)) + '</p>' +
+        '<p class="admin-mobile-item-date">Expires: ' + formatDate(item.ends_at) + '</p>' +
+        '<div class="admin-mobile-item-actions">' +
+        '<button type="button" class="admin-mobile-action-btn admin-mobile-lift" data-id="' + item.id + '">✓ Lift Restriction</button>' +
+        '</div></div>';
+    });
+    html += '</div>';
+    mobileContentBody.innerHTML = html;
+
+    mobileContentBody.querySelectorAll('.admin-mobile-lift').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = this.dataset.id;
+        liftRestriction(id);
+      });
+    });
+  }
+
+  function renderMobileAdmins(data) {
+    if (!data || data.length === 0) {
+      mobileContentBody.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">No admins found.</p>';
+      return;
+    }
+    var html = '<div class="admin-mobile-list">';
+    data.forEach(function(item) {
+      var roleColors = {'main_admin':'#fce7f3','co_admin':'#e0f2fe'};
+      var roleLabels = {'main_admin':'👑 Main Admin','co_admin':'👤 Co-Admin'};
+      html += '<div class="admin-mobile-item">' +
+        '<div class="admin-mobile-item-header">' +
+        '<span class="admin-mobile-item-cat" style="background:' + (roleColors[item.role] || '#f3f4f6') + '">' + (roleLabels[item.role] || item.role) + '</span>' +
+        '</div>' +
+        '<p class="admin-mobile-item-author">' + escapeHtml(item.name || 'User #' + item.user_id) + '</p>' +
+        '<div class="admin-mobile-item-actions">';
+      if (currentUser.role === 'main_admin' && item.role !== 'main_admin') {
+        html += '<button type="button" class="admin-mobile-action-btn admin-mobile-remove-admin" data-id="' + item.user_id + '">✕ Remove Admin</button>';
+      }
+      html += '</div></div>';
+    });
+    html += '</div>';
+    mobileContentBody.innerHTML = html;
+
+    mobileContentBody.querySelectorAll('.admin-mobile-remove-admin').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = this.dataset.id;
+        removeAdmin(id);
+      });
+    });
+  }
+
+  function showSubmissionModal(id) {
+    fetch('/api/writers/submissions/' + id)
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        var modal = document.getElementById('admin-post-modal');
+        var content = document.getElementById('admin-post-modal-content');
+        var catColors = {'Poetry':'#e8d5b7','Essay':'#d5e8d4','Short Story':'#dae8fc','Article':'#f8cecc','Opinion':'#fff2cc'};
+        content.innerHTML = '<div class="admin-submission-view">' +
+          '<span class="admin-submission-cat" style="background:' + (catColors[data.category] || '#e1d5e7') + '">' + escapeHtml(data.category) + '</span>' +
+          '<h2 style="margin:0.5rem 0;">' + escapeHtml(data.title) + '</h2>' +
+          '<p style="color:var(--text-muted);font-size:0.85rem;margin:0 0 1rem;">by ' + escapeHtml(data.author_name || 'Anonymous') + ' · ' + formatDate(data.submitted_at || data.created_at) + '</p>' +
+          '<div style="white-space:pre-wrap;line-height:1.6;">' + escapeHtml(data.content || '') + '</div>' +
+          '<div style="margin-top:1.5rem;display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          '<button type="button" class="btn-sm" id="modal-approve-btn" ' + (data.status === 'approved' ? 'disabled style="opacity:0.5;"' : '') + '>✅ Approve</button>' +
+          '<button type="button" class="btn-sm" id="modal-reject-btn" style="background:#dc2626;color:white;">❌ Reject</button>' +
+          '</div></div>';
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+
+        var approveBtn = document.getElementById('modal-approve-btn');
+        var rejectBtn = document.getElementById('modal-reject-btn');
+        if (approveBtn && data.status !== 'approved') {
+          approveBtn.addEventListener('click', function() {
+            var fd = new FormData();
+            fd.append('user_id', currentUser.user_id);
+            fd.append('action', 'approve');
+            fetch('/api/writers/submissions/' + id, {method:'POST', body:fd})
+              .then(function(){ modal.classList.add('hidden'); loadMobileContent('submissions', currentMobileSubTab); });
+          });
+        }
+        if (rejectBtn) {
+          rejectBtn.addEventListener('click', function() {
+            var fd = new FormData();
+            fd.append('user_id', currentUser.user_id);
+            fd.append('action', 'reject');
+            fetch('/api/writers/submissions/' + id, {method:'POST', body:fd})
+              .then(function(){ modal.classList.add('hidden'); loadMobileContent('submissions', 'pending'); });
+          });
+        }
+      });
+  }
+
+  function viewReport(id, type) {
+    if (type === 'post') {
+      fetch('/api/posts/' + id)
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          var modal = document.getElementById('admin-post-modal');
+          var content = document.getElementById('admin-post-modal-content');
+          content.innerHTML = '<div style="white-space:pre-wrap;line-height:1.6;">' + escapeHtml(data.content || '') + '</div>' +
+            '<div style="margin-top:1.5rem;display:flex;gap:0.5rem;"><button type="button" class="btn-sm admin-mobile-delete-content" data-id="' + id + '" data-type="post" style="background:#dc2626;color:white;">🗑 Delete</button></div>';
+          modal.classList.remove('hidden');
+          modal.setAttribute('aria-hidden', 'false');
+          var deleteBtn = content.querySelector('.admin-mobile-delete-content');
+          if (deleteBtn) {
+            deleteBtn.addEventListener('click', function() {
+              deleteContent(id, 'post');
+            });
+          }
+        });
+    }
+  }
+
+  function dismissReports(id, type) {
+    if (confirm('Dismiss all reports for this content?')) {
+      fetch('/api/admin/reports/dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.user_id, target_id: id, target_type: type })
+      }).then(function(){ loadMobileContent('reports', currentMobileSubTab); });
+    }
+  }
+
+  function deleteContent(id, type) {
+    if (confirm('Delete this content?')) {
+      var fd = new FormData();
+      fd.append('user_id', currentUser.user_id);
+      fetch('/api/posts/' + id, {method:'DELETE', body:fd})
+        .then(function(){ document.getElementById('admin-post-modal').classList.add('hidden'); loadMobileContent('reports', currentMobileSubTab); });
+    }
+  }
+
+  function liftRestriction(id) {
+    if (confirm('Lift this restriction?')) {
+      var fd = new FormData();
+      fd.append('user_id', currentUser.user_id);
+      fetch('/api/admin/restrictions/' + id + '/lift', {method:'POST', body:fd})
+        .then(function(){ loadMobileContent('users', currentMobileSubTab); });
+    }
+  }
+
+  function removeAdmin(id) {
+    if (confirm('Remove this admin?')) {
+      var fd = new FormData();
+      fd.append('user_id', currentUser.user_id);
+      fetch('/api/admin/users/' + id, {method:'DELETE', body:fd})
+        .then(function(){ loadMobileContent('admins', currentMobileSubTab); });
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // Wire up mobile nav buttons
+  mobileNavItems.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      activateSection(this.dataset.tab);
+      closeMobileDrawer();
+    });
+  });
+
+  // Back button
+  if (mobileBackBtn) {
+    mobileBackBtn.addEventListener('click', function() {
+      closeMobileContent();
+      // Reset nav active state
+      mobileNavItems.forEach(function(b) { b.classList.remove('active'); });
+    });
+  }
+
+  // Wire up section nav (Pending/Approved tabs)
+  document.querySelectorAll('.admin-mobile-section-nav-item').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      var subtab = this.dataset.subtab;
+      currentMobileSubTab = subtab;
+
+      // Update active state on nav
+      if (mobileSectionNav) {
+        mobileSectionNav.dataset.active = subtab;
+        mobileSectionNav.querySelectorAll('.admin-mobile-section-nav-item').forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+      }
+
+      // Load submissions content
+      loadMobileContent('submissions', subtab);
+    });
+  });
+
+  // Close modal
+  var adminPostModal = document.getElementById('admin-post-modal');
+  var adminPostModalContent = document.getElementById('admin-post-modal-content');
+  var adminPostModalClose = document.getElementById('admin-post-modal-close');
+  if (adminPostModalClose) {
+    adminPostModalClose.addEventListener('click', function() {
+      adminPostModal.classList.add('hidden');
+    });
+  }
+  if (adminPanelItem) adminPanelItem.classList.add('hidden');
   var logoutBtn = document.getElementById('btn-logout');
   if (logoutBtn) logoutBtn.addEventListener('click', function () { try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {} window.location.href = '/'; });
 
@@ -91,9 +604,6 @@
   });
 
   // Post viewer modal (for reported posts)
-  var adminPostModal = document.getElementById('admin-post-modal');
-  var adminPostModalContent = document.getElementById('admin-post-modal-content');
-  var adminPostModalClose = document.getElementById('admin-post-modal-close');
   function closeAdminPostModal() {
     if (adminPostModal) { adminPostModal.classList.add('hidden'); adminPostModal.setAttribute('aria-hidden', 'true'); }
     if (adminPostModalContent) adminPostModalContent.innerHTML = '';
@@ -129,15 +639,16 @@
       // Build reaction display
       var reactionHtml = '';
       var reactionEmojis = { heart: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😠' };
-      var reactionList = [];
+      var reactionList = [
+        '<span class="reaction-item">&#9829; ' + (reactions.heart || 0) + ' like' + ((reactions.heart || 0) === 1 ? '' : 's') + '</span>',
+        '<span class="reaction-item">&#128172; ' + comments.length + ' comment' + (comments.length === 1 ? '' : 's') + '</span>'
+      ];
       for (var rt in reactions) {
-        if (reactions[rt] > 0) {
+        if (rt !== 'heart' && reactions[rt] > 0) {
           reactionList.push('<span class="reaction-item">' + reactionEmojis[rt] + ' ' + reactions[rt] + '</span>');
         }
       }
-      if (reactionList.length > 0) {
-        reactionHtml = '<div class="post-reactions-summary" style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">' + reactionList.join('') + '</div>';
-      }
+      reactionHtml = '<div class="post-reactions-summary" style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">' + reactionList.join('') + '</div>';
       
       card.innerHTML =
         '<div class="post-card-top"><div class="post-author-row">' +
@@ -423,17 +934,55 @@
   var sidenavItems = document.querySelectorAll('.admin-sidenav-item');
   var sections = document.querySelectorAll('.admin-section');
   var tabLoaded = {};
+  var reportsControls = document.querySelector('#section-reports .admin-controls');
+  var adminsSearch = document.querySelector('#section-admins .admin-search-compact');
+  var mobileMovedControls = [
+    reportsControls ? { el: reportsControls, parent: reportsControls.parentNode, next: reportsControls.nextSibling } : null,
+    adminsSearch ? { el: adminsSearch, parent: adminsSearch.parentNode, next: adminsSearch.nextSibling } : null
+  ].filter(Boolean);
+
+  function restoreMobileMovedControls() {
+    mobileMovedControls.forEach(function(record) {
+      if (record.el.parentNode !== record.parent) {
+        record.parent.insertBefore(record.el, record.next);
+      }
+    });
+  }
+
+  function syncMobileTopbarActions(tabId) {
+    if (!mobileTopbarActions) return;
+    restoreMobileMovedControls();
+    mobileTopbarActions.innerHTML = '';
+    if (window.innerWidth > 900) return;
+    var activeControls = null;
+    if (tabId === 'tab-reports') activeControls = reportsControls;
+    else if (tabId === 'tab-admins') activeControls = adminsSearch;
+    if (activeControls) mobileTopbarActions.appendChild(activeControls);
+  }
+
+  window.addEventListener('resize', function() {
+    var active = document.querySelector('.admin-section.active');
+    syncMobileTopbarActions(active ? active.id.replace('section-', 'tab-') : 'tab-submissions');
+  });
 
   function activateSection(tabId) {
     sidenavItems.forEach(function (item) { item.classList.toggle('active', item.dataset.tab === tabId); });
+    var mobileNavItems = document.querySelectorAll('.admin-mobile-nav-item');
+    mobileNavItems.forEach(function (item) { item.classList.toggle('active', item.dataset.tab === tabId); });
+    var activeNav = document.querySelector('.admin-mobile-nav-item[data-tab="' + tabId + '"], .admin-sidenav-item[data-tab="' + tabId + '"]');
+    if (mobileCurrentTitle && activeNav) {
+      var labelEl = activeNav.querySelector('span:last-child');
+      mobileCurrentTitle.textContent = (labelEl ? labelEl.textContent : activeNav.textContent).replace(/\s+/g, ' ').trim();
+    }
+    syncMobileTopbarActions(tabId);
     sections.forEach(function (s) { var sid = tabId.replace('tab-', 'section-'); s.classList.toggle('active', s.id === sid); });
     if (!tabLoaded[tabId]) {
       tabLoaded[tabId] = true;
       if (tabId === 'tab-submissions') loadSubmissions();
       else if (tabId === 'tab-approved') loadApprovedSubmissions();
       else if (tabId === 'tab-reports') loadReports();
-      else if (tabId === 'tab-restrictions') loadRestrictions();
-      else if (tabId === 'tab-users') loadUsers();
+      else if (tabId === 'tab-users') loadRestrictions();
+      else if (tabId === 'tab-admins') loadUsers();
     }
   }
   sidenavItems.forEach(function (item) { item.addEventListener('click', function () { activateSection(item.dataset.tab); }); });
@@ -495,7 +1044,7 @@
 
   function renderRestrictionCard(r) {
     var card = document.createElement('div');
-    card.className = 'restriction-card';
+    card.className = 'restriction-card' + (r.is_active ? ' restriction-card-active' : '');
     card.dataset.id = String(r.id);
     
     var statusClass = r.is_active ? 'restriction-status-active' : 'restriction-status-inactive';
@@ -509,7 +1058,9 @@
     
     var userDisplay = r.user_display_name || 'Unknown User';
     var userIdentifier = r.user_identifier ? ' (' + r.user_identifier + ')' : '';
-    var adminDisplay = r.admin_display_name || 'System';
+    var detailSummary = r.is_active && r.remaining_time_human
+      ? '<div class="restriction-card-summary">' + escapeHtml(r.remaining_time_human) + ' remaining</div>'
+      : '<div class="restriction-card-summary">Ended ' + formatDate(r.restriction_end) + '</div>';
     
     card.innerHTML =
       '<div class="restriction-card-header">' +
@@ -517,17 +1068,9 @@
       '<h3 class="restriction-card-username">' + escapeHtml(userDisplay) + escapeHtml(userIdentifier) + '</h3>' +
       '<span class="restriction-status ' + statusClass + '">' + statusIcon + ' ' + statusText + '</span>' +
       '</div>' +
-      '<div class="restriction-card-meta">' +
-      '<span>Restriction #' + r.restriction_count + '</span>' +
-      '<span class="restriction-card-sep">•</span>' +
-      '<span>Created by ' + escapeHtml(adminDisplay) + '</span>' +
-      '<span class="restriction-card-sep">•</span>' +
-      '<span>' + formatDate(r.created_at) + '</span>' +
-      '</div>' +
       '</div>' +
       '<div class="restriction-card-body">' +
-      '<div class="restriction-period">From ' + formatDate(r.restriction_start) + ' to ' + formatDate(r.restriction_end) + '</div>' +
-      remainingTime +
+      detailSummary +
       '</div>' +
       '<div class="restriction-card-actions">' +
       (r.is_active ? '<button type="button" class="btn-sm btn-modify-restriction">Modify</button>' : '') +
@@ -565,11 +1108,13 @@
   var restrictionsFilterEl = document.getElementById('restrictions-filter');
   var restrictionsSortEl = document.getElementById('restrictions-sort');
   var restrictionsSearchEl = document.getElementById('restrictions-search');
+  setupIconSelect('restrictions-filter-toggle', 'restrictions-filter');
+  setupIconSelect('restrictions-sort-toggle', 'restrictions-sort');
   
   if (restrictionsFilterEl) {
     restrictionsFilterEl.addEventListener('change', function() {
       restrictionsFilter = restrictionsFilterEl.value;
-      if (tabLoaded['tab-restrictions']) {
+      if (tabLoaded['tab-users']) {
         loadRestrictions();
       }
     });
@@ -578,7 +1123,7 @@
   if (restrictionsSortEl) {
     restrictionsSortEl.addEventListener('change', function() {
       restrictionsSort = restrictionsSortEl.value;
-      if (tabLoaded['tab-restrictions']) {
+      if (tabLoaded['tab-users']) {
         loadRestrictions();
       }
     });
@@ -591,66 +1136,125 @@
     });
   }
 
-  // Submissions
+  // Submissions with tabs
   var submissionsSort = 'newest';
-  var allSubmissions = [];
+  var currentSubmissionTab = 'pending';
+  var pendingSubmissions = [];
+  var approvedSubmissions = [];
+  var submissionsTabs = document.querySelector('#section-submissions .admin-section-tabs');
 
   function loadSubmissions() {
     var statusEl = document.getElementById('submissions-status');
     var listEl = document.getElementById('submissions-list');
     statusEl.textContent = 'Loading...'; listEl.innerHTML = '';
-    api('/api/admin/submissions?user_id=' + currentUser.user_id + '&status=Pending Review')
-      .then(function (rows) { 
-        // Also load rejected submissions
-        return api('/api/admin/submissions?user_id=' + currentUser.user_id + '&status=Rejected')
-          .then(function (rejectedRows) {
-            allSubmissions = rows.concat(rejectedRows);
-            statusEl.textContent = allSubmissions.length ? '' : 'No pending submissions found.'; 
-            renderSubmissions(); 
-          });
-      })
-      .catch(function (e) { statusEl.textContent = 'Error: ' + e.message; });
+    
+    // Load both pending and approved
+    Promise.all([
+      api('/api/admin/submissions?user_id=' + currentUser.user_id + '&status=Pending Review'),
+      api('/api/admin/submissions?user_id=' + currentUser.user_id + '&status=Approved')
+    ]).then(function(results) {
+      pendingSubmissions = results[0] || [];
+      approvedSubmissions = results[1] || [];
+      statusEl.textContent = '';
+      renderSubmissionTab(currentSubmissionTab);
+    }).catch(function (e) { statusEl.textContent = 'Error: ' + e.message; });
   }
 
-  // Approved Submissions
-  var approvedSort = 'newest';
-  var allApprovedSubmissions = [];
-
   function loadApprovedSubmissions() {
-    var statusEl = document.getElementById('approved-status');
-    var listEl = document.getElementById('approved-list');
-    statusEl.textContent = 'Loading...'; listEl.innerHTML = '';
-    api('/api/admin/submissions?user_id=' + currentUser.user_id + '&status=Approved')
-      .then(function (rows) { 
-        allApprovedSubmissions = rows; 
-        statusEl.textContent = rows.length ? '' : 'No approved submissions found.'; 
-        renderApprovedSubmissions(); 
-      })
-      .catch(function (e) { statusEl.textContent = 'Error: ' + e.message; });
+    loadSubmissions();
+  }
+
+  function setupIconSelect(toggleId, selectId, onChange) {
+    var toggle = document.getElementById(toggleId);
+    var select = document.getElementById(selectId);
+    var wrap = select ? select.closest('.admin-sort-wrap') : null;
+    if (!toggle || !select || !wrap) return;
+    var menu = document.createElement('div');
+    menu.className = 'admin-select-menu hidden';
+    Array.prototype.forEach.call(select.options, function(option) {
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'admin-select-menu-item';
+      item.dataset.value = option.value;
+      item.textContent = option.textContent;
+      item.addEventListener('click', function(e) {
+        e.stopPropagation();
+        select.value = option.value;
+        Array.prototype.forEach.call(menu.querySelectorAll('.admin-select-menu-item'), function(btn) {
+          btn.classList.toggle('active', btn.dataset.value === select.value);
+        });
+        wrap.classList.remove('is-open');
+        menu.classList.add('hidden');
+        toggle.setAttribute('aria-expanded', 'false');
+        if (typeof onChange === 'function') onChange(select.value);
+        select.dispatchEvent(new Event('change'));
+      });
+      menu.appendChild(item);
+    });
+    wrap.appendChild(menu);
+    function closeMenu() {
+      wrap.classList.remove('is-open');
+      menu.classList.add('hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    toggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var isOpen = !wrap.classList.contains('is-open');
+      document.querySelectorAll('.admin-sort-wrap.is-open').forEach(function(openWrap) {
+        openWrap.classList.remove('is-open');
+        var openMenu = openWrap.querySelector('.admin-select-menu');
+        var openToggle = openWrap.querySelector('.admin-sort-toggle');
+        if (openMenu) openMenu.classList.add('hidden');
+        if (openToggle) openToggle.setAttribute('aria-expanded', 'false');
+      });
+      wrap.classList.toggle('is-open', isOpen);
+      menu.classList.toggle('hidden', !isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      Array.prototype.forEach.call(menu.querySelectorAll('.admin-select-menu-item'), function(btn) {
+        btn.classList.toggle('active', btn.dataset.value === select.value);
+      });
+    });
+    document.addEventListener('click', function(e) {
+      if (!wrap.contains(e.target)) closeMenu();
+    });
   }
 
   var sortSelect = document.getElementById('submissions-sort');
-  if (sortSelect) sortSelect.addEventListener('change', function () { submissionsSort = sortSelect.value; renderSubmissions(); });
+  setupIconSelect('submissions-sort-toggle', 'submissions-sort', function(value) {
+    submissionsSort = value;
+    renderSubmissionTab(currentSubmissionTab);
+  });
 
-  var approvedSortSelect = document.getElementById('approved-sort');
-  if (approvedSortSelect) approvedSortSelect.addEventListener('change', function () { approvedSort = approvedSortSelect.value; renderApprovedSubmissions(); });
+  // Tab switching
+  document.querySelectorAll('.admin-section-tab[data-status]').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.admin-section-tab[data-status]').forEach(function(t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      currentSubmissionTab = tab.dataset.status;
+      if (submissionsTabs) submissionsTabs.dataset.active = currentSubmissionTab;
+      renderSubmissionTab(currentSubmissionTab);
+    });
+  });
 
-  function renderSubmissions() {
+  function renderSubmissionTab(tab) {
     var listEl = document.getElementById('submissions-list');
     listEl.innerHTML = '';
-    var rows = allSubmissions.slice();
+    var rows = (tab === 'pending' ? pendingSubmissions : approvedSubmissions).slice();
     if (submissionsSort === 'oldest') rows.sort(function (a, b) { return a.created_at < b.created_at ? -1 : 1; });
     else rows.sort(function (a, b) { return a.created_at > b.created_at ? -1 : 1; });
-    rows.forEach(function (s) { listEl.appendChild(renderSubmissionCard(s, false)); });
+    if (rows.length === 0) {
+      listEl.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);">' + (tab === 'pending' ? 'No pending submissions.' : 'No approved submissions.') + '</p>';
+    } else {
+      rows.forEach(function (s) { listEl.appendChild(renderSubmissionCard(s, tab === 'approved')); });
+    }
+  }
+
+  function renderSubmissions() {
+    renderSubmissionTab(currentSubmissionTab);
   }
 
   function renderApprovedSubmissions() {
-    var listEl = document.getElementById('approved-list');
-    listEl.innerHTML = '';
-    var rows = allApprovedSubmissions.slice();
-    if (approvedSort === 'oldest') rows.sort(function (a, b) { return a.created_at < b.created_at ? -1 : 1; });
-    else rows.sort(function (a, b) { return a.created_at > b.created_at ? -1 : 1; });
-    rows.forEach(function (s) { listEl.appendChild(renderSubmissionCard(s, true)); });
+    renderSubmissionTab(currentSubmissionTab);
   }
 
   function statusBadgeClass(status) { if (status === 'Approved') return 'badge-approved'; if (status === 'Rejected') return 'badge-rejected'; return 'badge-pending'; }
@@ -741,6 +1345,8 @@
   // Add event listeners for reports filter and sort
   var reportsFilter = document.getElementById('reports-filter');
   var reportsSort = document.getElementById('reports-sort');
+  setupIconSelect('reports-filter-toggle', 'reports-filter');
+  setupIconSelect('reports-sort-toggle', 'reports-sort');
   if (reportsFilter) {
     reportsFilter.addEventListener('change', function() {
       if (tabLoaded['tab-reports']) {
@@ -786,7 +1392,7 @@
       '<span class="report-count-badge">' + g.report_count + ' report' + (g.report_count !== 1 ? 's' : '') + '</span>' +
       '</div>' +
       userInfo +
-      '<div class="report-content-preview' + (g.target_deleted ? ' report-content-deleted' : '') + '">' + escapeHtml(previewText) + '</div>' +
+      '<div class="report-content-preview' + (g.target_deleted ? ' report-content-deleted' : '') + '"' + (!g.target_deleted ? ' role="button" tabindex="0" title="View reported post"' : '') + '>' + escapeHtml(previewText) + '</div>' +
       '</div>' +
       '<div class="report-group-actions">' +
       '<button type="button" class="btn-sm btn-dismiss-reports">Dismiss</button>' +
@@ -800,11 +1406,16 @@
     
     // Click on content preview to view post details
     var contentPreview = group.querySelector('.report-content-preview');
-    if (contentPreview && !g.target_deleted && g.target_type === 'post') {
-      contentPreview.style.cursor = 'pointer';
-      contentPreview.style.textDecoration = 'underline';
-      contentPreview.addEventListener('click', function() {
-        openAdminPostModal(g.target_type, g.target_id);
+    if (contentPreview && !g.target_deleted) {
+      var openReportedContent = function() {
+        openAdminPostModal('post', g.target_post_id || g.target_id);
+      };
+      contentPreview.addEventListener('click', openReportedContent);
+      contentPreview.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openReportedContent();
+        }
       });
     }
     
@@ -880,7 +1491,6 @@
   }
   var usersSearchEl = document.getElementById('users-search');
   if (usersSearchEl) usersSearchEl.addEventListener('input', function () { renderUsersView(allUsers, usersSearchEl.value.trim().toLowerCase()); });
-
   function renderUsersView(users, query) {
     var listEl = document.getElementById('users-list'); listEl.innerHTML = '';
     var filtered = query ? users.filter(function (u) { return u.display_name.toLowerCase().indexOf(query) !== -1 || (u.user_id && u.user_id.toLowerCase().indexOf(query) !== -1); }) : users;
@@ -913,12 +1523,6 @@
         else if (u.role === 'co_admin') actionHtml = '<button type="button" class="btn-sm btn-role-action" data-action="remove-co-admin">Remove Co-Admin</button>';
       }
       
-      // Add restriction management button for regular users
-      if (u.role === 'user') {
-        actionHtml += '<button type="button" class="btn-sm btn-user-restrictions" data-user-id="' + u.id + '" style="margin-left:0.5rem;">View Restrictions</button>';
-      }
-    } else { 
-      actionHtml = '<span class="user-row-you">(you)</span>'; 
     }
     
     // Check if user has active restriction
@@ -934,7 +1538,8 @@
       '<span class="user-row-email">' + escapeHtml(u.user_id || 'No ID') + '</span>' +
       restrictionStatus +
       '</div>' +
-      '<span class="role-badge ' + roleBadgeClass(u.role) + '">' + roleBadgeLabel(u.role) + '</span>' +
+      '<div class="user-row-badges"><span class="role-badge ' + roleBadgeClass(u.role) + '">' + roleBadgeLabel(u.role) + '</span>' +
+      (u.id === currentUser.user_id ? '<span class="user-row-you">(you)</span>' : '') + '</div>' +
       '<div class="user-row-action">' + actionHtml + '</div>';
     
     var btns = row.querySelectorAll('.btn-role-action');
@@ -946,14 +1551,6 @@
         else if (a === 'transfer') doTransferOwnership(u);
       });
     });
-    
-    // Add restriction button handler
-    var restrictionBtn = row.querySelector('.btn-user-restrictions');
-    if (restrictionBtn) {
-      restrictionBtn.addEventListener('click', function() {
-        openUserRestrictionsModal(u);
-      });
-    }
     
     return row;
   }
@@ -1388,7 +1985,7 @@
     })
     .then(function() {
       closeCreateRestrictionModal();
-      if (tabLoaded['tab-restrictions']) {
+      if (tabLoaded['tab-users']) {
         loadRestrictions();
       }
     })
@@ -1545,7 +2142,7 @@
         })
         .then(function() {
           ctx.close();
-          if (tabLoaded['tab-restrictions']) {
+          if (tabLoaded['tab-users']) {
             loadRestrictions();
           }
         })
@@ -1585,7 +2182,7 @@
         })
         .then(function() {
           ctx.close();
-          if (tabLoaded['tab-restrictions']) {
+          if (tabLoaded['tab-users']) {
             loadRestrictions();
           }
         })
@@ -1605,5 +2202,17 @@
         window.scrollTo({ top: 0, behavior: 'instant' });
       });
     });
+
+    var backToTopBtn = document.getElementById('admin-back-to-top');
+    if (backToTopBtn) {
+      function syncBackToTop() {
+        backToTopBtn.classList.toggle('visible', window.scrollY > 320);
+      }
+      window.addEventListener('scroll', syncBackToTop, { passive: true });
+      backToTopBtn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      syncBackToTop();
+    }
   });
 })();

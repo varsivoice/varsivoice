@@ -115,6 +115,7 @@
             email: user.email,
             display_name: user.display_name,
             photo_url: user.photo_url || '',
+            display_name_changed: !!user.display_name_changed,
             role: user.role || 'user',
             at: Date.now(),
           };
@@ -224,6 +225,7 @@
           email: user.email,
           display_name: user.display_name,
           photo_url: user.photo_url || "",
+          display_name_changed: !!user.display_name_changed,
           role: user.role || "user",
           at: Date.now(),
         };

@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
-<body class="page-wall">
+<body class="page-wall page-admin">
   <header class="masthead">
     <div class="masthead-inner">
       <!-- Left: brand -->
@@ -64,7 +64,7 @@
               <button type="button" id="theme-light-btn" class="hamburger-theme-btn active" aria-pressed="true">☀️ Light mode</button>
               <button type="button" id="theme-dark-btn" class="hamburger-theme-btn" aria-pressed="false">🌙 Dark mode</button>
               <div class="hamburger-divider"></div>
-              <a href="/admin" id="admin-panel-item" class="hamburger-menu-item" role="menuitem">🛡️ Admin Panel</a>
+              <a href="/admin" id="admin-panel-item" class="hamburger-menu-item hidden" role="menuitem">🛡️ Admin Panel</a>
             <div class="hamburger-divider"></div>
             <button type="button" id="btn-logout" class="hamburger-menu-item hamburger-logout" role="menuitem">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
@@ -76,8 +76,49 @@
     </div>
   </header>
 
+  <section class="hero-banner" aria-label="Banner" style="background-image: url('/images/project-luma-shaders-sun-cubic.jpg'); background-size: cover; background-position: center;">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">Admin Panel</h1>
+      <p class="hero-tagline">Manage submissions, reports, and users</p>
+    </div>
+  </section>
+
+  <!-- Mobile admin nav drawer -->
+  <div id="admin-mobile-drawer" class="admin-mobile-drawer hidden" role="dialog" aria-label="Admin menu">
+    <div class="admin-mobile-drawer-header">
+      <span class="admin-mobile-drawer-title">🛡️ Admin Panel</span>
+      <button type="button" id="admin-mobile-drawer-close" class="admin-mobile-drawer-close" aria-label="Close menu">✕</button>
+    </div>
+    <nav class="admin-mobile-nav" role="navigation" aria-label="Admin sections">
+      <button type="button" class="admin-mobile-nav-item active" id="mobile-nav-submissions" data-tab="tab-submissions">
+        <span class="admin-mobile-nav-icon">📝</span>
+        <span>Submissions</span>
+      </button>
+      <button type="button" class="admin-mobile-nav-item" id="mobile-nav-reports" data-tab="tab-reports">
+        <span class="admin-mobile-nav-icon">🚩</span>
+        <span>Reports</span>
+      </button>
+      <button type="button" class="admin-mobile-nav-item" id="mobile-nav-users" data-tab="tab-users">
+        <span class="admin-mobile-nav-icon">👥</span>
+        <span>Users</span>
+      </button>
+      <button type="button" class="admin-mobile-nav-item" id="mobile-nav-admins" data-tab="tab-admins">
+        <span class="admin-mobile-nav-icon">🛡️</span>
+        <span>Admins</span>
+      </button>
+    </nav>
+    <div class="admin-mobile-drawer-footer">
+      <button type="button" id="admin-mobile-logout" class="admin-mobile-logout-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        Sign out
+      </button>
+    </div>
+  </div>
+  <div id="admin-mobile-drawer-overlay" class="admin-mobile-drawer-overlay hidden"></div>
+
   <div class="admin-layout">
-    <!-- Sticky sidebar nav -->
+    <!-- Sticky sidebar nav (desktop) -->
     <aside class="admin-sidebar">
       <div class="admin-sidebar-inner">
         <div class="admin-sidebar-header">
@@ -87,23 +128,19 @@
         <nav class="admin-sidenav" role="navigation" aria-label="Admin sections">
           <button type="button" class="admin-sidenav-item active" id="sidenav-submissions" data-tab="tab-submissions">
             <span class="admin-sidenav-icon">📝</span>
-            <span>Pending Submissions</span>
-          </button>
-          <button type="button" class="admin-sidenav-item" id="sidenav-approved" data-tab="tab-approved">
-            <span class="admin-sidenav-icon">✅</span>
-            <span>Approved Submissions</span>
+            <span>Submissions</span>
           </button>
           <button type="button" class="admin-sidenav-item" id="sidenav-reports" data-tab="tab-reports">
             <span class="admin-sidenav-icon">🚩</span>
             <span>Reports</span>
           </button>
-          <button type="button" class="admin-sidenav-item" id="sidenav-restrictions" data-tab="tab-restrictions">
-            <span class="admin-sidenav-icon">⏳</span>
-            <span>User Restrictions</span>
-          </button>
           <button type="button" class="admin-sidenav-item" id="sidenav-users" data-tab="tab-users">
+            <span class="admin-sidenav-icon">👥</span>
+            <span>Users</span>
+          </button>
+          <button type="button" class="admin-sidenav-item" id="sidenav-admins" data-tab="tab-admins">
             <span class="admin-sidenav-icon">🛡️</span>
-            <span>Manage Admins</span>
+            <span>Admins</span>
           </button>
         </nav>
       </div>
@@ -111,12 +148,27 @@
 
     <!-- Main content -->
     <main class="admin-main">
+      <div class="admin-mobile-topbar">
+        <button type="button" id="admin-sidebar-toggle-btn" class="admin-sidebar-toggle-btn" aria-label="Toggle sidebar menu" aria-expanded="false">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        </button>
+        <h2 id="admin-mobile-current-title" class="admin-mobile-current-title">Submissions</h2>
+        <div id="admin-mobile-topbar-actions" class="admin-mobile-topbar-actions"></div>
+      </div>
+
       <!-- Submissions section -->
       <section class="admin-section active" id="section-submissions" role="tabpanel">
         <div class="admin-section-toolbar">
-          <h2 class="admin-section-heading">📝 Pending Submissions</h2>
-          <div class="admin-sort-wrap">
+          <h2 class="admin-section-heading">📝 Submissions</h2>
+          <div class="admin-section-tabs" data-active="pending">
+            <button type="button" class="admin-section-tab active" id="tab-btn-pending" data-status="pending">Pending</button>
+            <button type="button" class="admin-section-tab" id="tab-btn-approved" data-status="approved">Approved</button>
+          </div>
+          <div class="admin-sort-wrap admin-icon-select">
             <label class="admin-sort-label" for="submissions-sort">Sort:</label>
+            <button type="button" id="submissions-sort-toggle" class="admin-sort-toggle" aria-label="Sort submissions" aria-expanded="false">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5h18v2H3V5zm4 6h10v2H7v-2zm3 6h4v2h-4v-2z"/></svg>
+            </button>
             <select id="submissions-sort" class="admin-sort-select">
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
@@ -125,22 +177,7 @@
         </div>
         <p class="admin-section-status" id="submissions-status">Loading…</p>
         <div id="submissions-list" class="admin-list"></div>
-      </section>
-
-      <!-- Approved Submissions section -->
-      <section class="admin-section" id="section-approved" role="tabpanel">
-        <div class="admin-section-toolbar">
-          <h2 class="admin-section-heading">✅ Approved Submissions</h2>
-          <div class="admin-sort-wrap">
-            <label class="admin-sort-label" for="approved-sort">Sort:</label>
-            <select id="approved-sort" class="admin-sort-select">
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-            </select>
-          </div>
-        </div>
-        <p class="admin-section-status" id="approved-status">Loading…</p>
-        <div id="approved-list" class="admin-list"></div>
+        <div id="approved-list" class="admin-list" style="display:none;"></div>
       </section>
 
       <!-- Reports section -->
@@ -148,8 +185,11 @@
         <div class="admin-section-toolbar">
           <h2 class="admin-section-heading">🚩 Reports</h2>
           <div class="admin-controls">
-            <div class="admin-sort-wrap">
+            <div class="admin-sort-wrap admin-icon-select">
               <label class="admin-sort-label" for="reports-filter">Filter:</label>
+              <button type="button" id="reports-filter-toggle" class="admin-sort-toggle" aria-label="Filter reports" aria-expanded="false">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.5 7.3V18l-3 1.5v-7.2L4 5z"/></svg>
+              </button>
               <select id="reports-filter" class="admin-sort-select">
                 <option value="all">All Reports</option>
                 <option value="spam">Spam</option>
@@ -159,8 +199,11 @@
                 <option value="other">Other</option>
               </select>
             </div>
-            <div class="admin-sort-wrap">
+            <div class="admin-sort-wrap admin-icon-select">
               <label class="admin-sort-label" for="reports-sort">Sort:</label>
+              <button type="button" id="reports-sort-toggle" class="admin-sort-toggle" aria-label="Sort reports" aria-expanded="false">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4v16"/><path d="M5 7l3-3 3 3"/><path d="M16 20V4"/><path d="M13 17l3 3 3-3"/></svg>
+              </button>
               <select id="reports-sort" class="admin-sort-select">
                 <option value="count_desc">Most Reported</option>
                 <option value="count_asc">Least Reported</option>
@@ -174,21 +217,27 @@
         <div id="reports-list" class="admin-list"></div>
       </section>
 
-      <!-- Restrictions section -->
-      <section class="admin-section" id="section-restrictions" role="tabpanel">
+      <!-- Users section -->
+      <section class="admin-section" id="section-users" role="tabpanel">
         <div class="admin-section-toolbar">
-          <h2 class="admin-section-heading">⏳ User Restrictions</h2>
-          <div class="admin-controls">
-            <div class="admin-sort-wrap">
+          <h2 class="admin-section-heading">👥 Users</h2>
+          <div class="admin-controls admin-restrictions-controls">
+            <div class="admin-sort-wrap admin-icon-select">
               <label class="admin-sort-label" for="restrictions-filter">Filter:</label>
+              <button type="button" id="restrictions-filter-toggle" class="admin-sort-toggle" aria-label="Filter restrictions" aria-expanded="false">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.5 7.3V18l-3 1.5v-7.2L4 5z"/></svg>
+              </button>
               <select id="restrictions-filter" class="admin-sort-select">
                 <option value="all">All Restrictions</option>
                 <option value="active">Active Only</option>
                 <option value="inactive">Inactive Only</option>
               </select>
             </div>
-            <div class="admin-sort-wrap">
+            <div class="admin-sort-wrap admin-icon-select">
               <label class="admin-sort-label" for="restrictions-sort">Sort:</label>
+              <button type="button" id="restrictions-sort-toggle" class="admin-sort-toggle" aria-label="Sort restrictions" aria-expanded="false">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4v16"/><path d="M5 7l3-3 3 3"/><path d="M16 20V4"/><path d="M13 17l3 3 3-3"/></svg>
+              </button>
               <select id="restrictions-sort" class="admin-sort-select">
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -196,22 +245,22 @@
               </select>
             </div>
             <button type="button" id="btn-create-restriction" class="btn-sm" style="background:#dc2626;color:white;border-color:#dc2626;">Create Restriction</button>
+            <div class="admin-search-bar restriction-search-compact">
+              <input type="search" id="restrictions-search" class="admin-search-input" placeholder="Search by user name or ID…" autocomplete="off" />
+            </div>
           </div>
-        </div>
-        <div class="admin-search-bar">
-          <input type="search" id="restrictions-search" class="admin-search-input" placeholder="Search by user name or ID…" autocomplete="off" />
         </div>
         <p class="admin-section-status" id="restrictions-status">Loading…</p>
         <div id="restrictions-list" class="admin-list"></div>
       </section>
 
-      <!-- Users section -->
-      <section class="admin-section" id="section-users" role="tabpanel">
+      <!-- Admins section -->
+      <section class="admin-section" id="section-admins" role="tabpanel">
         <div class="admin-section-toolbar">
-          <h2 class="admin-section-heading">🛡️ Manage Admins</h2>
-        </div>
-        <div class="admin-search-bar">
-          <input type="search" id="users-search" class="admin-search-input" placeholder="Search by name or user ID…" autocomplete="off" />
+          <h2 class="admin-section-heading">🛡️ Admins</h2>
+          <div class="admin-search-bar admin-search-compact">
+            <input type="search" id="users-search" class="admin-search-input" placeholder="Search by name or user ID…" autocomplete="off" />
+          </div>
         </div>
         <p class="admin-section-status" id="users-status">Loading…</p>
         <div id="users-list" class="admin-list"></div>
@@ -303,6 +352,10 @@
       </div>
     </div>
   </div>
+
+  <button type="button" id="admin-back-to-top" class="back-to-top" aria-label="Back to top">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.59 5.58L20 12 12 4z"/></svg>
+  </button>
 
   <script src="{{ url_for('static', filename='js/notif.js') }}"></script>
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>

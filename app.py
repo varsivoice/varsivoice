@@ -300,6 +300,7 @@ def init_db():
               password_hash TEXT NOT NULL,
               display_name TEXT NOT NULL,
               photo_url TEXT,
+              display_name_changed INTEGER NOT NULL DEFAULT 0,
               created_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
 
@@ -451,6 +452,7 @@ def init_db():
             "ALTER TABLE users ADD COLUMN user_id TEXT NULL",
             "ALTER TABLE submissions ADD COLUMN user_id INTEGER NULL",
             "ALTER TABLE users ADD COLUMN account_status TEXT NOT NULL DEFAULT 'active'",
+            "ALTER TABLE users ADD COLUMN display_name_changed INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE user_restrictions ADD COLUMN created_by_admin_id INTEGER NULL",
             "ALTER TABLE user_restrictions ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))",
             "ALTER TABLE user_restrictions ADD COLUMN deactivated_at TEXT NULL",
@@ -939,7 +941,7 @@ def verify_and_signup():
         
         conn.commit()
         user = conn.execute(
-            "SELECT id, email, display_name, photo_url, created_at, role, user_id FROM users WHERE id = ?",
+            "SELECT id, email, display_name, photo_url, display_name_changed, created_at, role, user_id FROM users WHERE id = ?",
             (uid,),
         ).fetchone()
         return jsonify({"user": json_row(user)}), 201
@@ -989,7 +991,7 @@ def signup():
         conn.commit()
         
         user = conn.execute(
-            "SELECT id, email, display_name, photo_url, created_at, role, user_id FROM users WHERE id = ?",
+            "SELECT id, email, display_name, photo_url, display_name_changed, created_at, role, user_id FROM users WHERE id = ?",
             (uid,),
         ).fetchone()
         return jsonify({"user": json_row(user)}), 201
@@ -1009,7 +1011,7 @@ def login():
     try:
         row = conn.execute(
             """
-            SELECT id, email, password_hash, display_name, photo_url, created_at, role, user_id
+            SELECT id, email, password_hash, display_name, photo_url, display_name_changed, created_at, role, user_id
             FROM users WHERE email = ?
             """,
             (email,),
@@ -1023,6 +1025,7 @@ def login():
             "email": row["email"],
             "display_name": row["display_name"],
             "photo_url": row["photo_url"],
+            "display_name_changed": bool(row["display_name_changed"]),
             "created_at": row["created_at"],
             "role": row["role"],
             "user_id": row["user_id"],
@@ -1034,107 +1037,7 @@ def login():
 
 @app.route("/api/users/<int:user_id>/delete-account", methods=["DELETE"])
 def delete_account(user_id):
-    data = request.get_json(force=True, silent=True) or {}
-    requesting_user_id = data.get("user_id")
-    try:
-        if int(requesting_user_id) != user_id:
-            return jsonify({"error": "Unauthorized."}), 403
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid user_id."}), 400
-
-    conn = get_conn()
-    try:
-        row = conn.execute("SELECT id, photo_url FROM users WHERE id = ?", (user_id,)).fetchone()
-        if not row:
-            return jsonify({"error": "User not found."}), 404
-        
-        photo_url = row["photo_url"]
-        
-        # Enable foreign keys
-        conn.execute("PRAGMA foreign_keys=ON")
-        
-        # Collect all files to delete
-        files_to_delete = []
-        
-        # User's profile photo
-        if photo_url:
-            files_to_delete.append(photo_url)
-        
-        # Get user's posts and their images
-        post_rows = conn.execute("SELECT id, image_url FROM posts WHERE user_id = ?", (user_id,)).fetchall()
-        post_ids = [p["id"] for p in post_rows]
-        
-        for post in post_rows:
-            if post["image_url"]:
-                files_to_delete.append(post["image_url"])
-        
-        # Get comments on user's posts (will be deleted when posts are deleted)
-        if post_ids:
-            placeholders = ",".join(["?"] * len(post_ids))
-            comment_images = conn.execute(
-                f"SELECT image_url FROM comments WHERE post_id IN ({placeholders}) AND image_url IS NOT NULL",
-                post_ids
-            ).fetchall()
-            for comment in comment_images:
-                files_to_delete.append(comment["image_url"])
-        
-        # Get user's comments on other posts
-        user_comments = conn.execute(
-            "SELECT id, image_url FROM comments WHERE user_id = ?",
-            (user_id,)
-        ).fetchall()
-        for comment in user_comments:
-            if comment["image_url"]:
-                files_to_delete.append(comment["image_url"])
-        
-        # Delete user's reactions (using user_token pattern)
-        user_token = f"user_{user_id}"
-        conn.execute("DELETE FROM reactions WHERE user_token = ?", (user_token,))
-        
-        # Delete user's likes (using user_token pattern)
-        conn.execute("DELETE FROM likes WHERE user_token = ?", (user_token,))
-        
-        # Delete comments on user's posts (before deleting posts)
-        if post_ids:
-            placeholders = ",".join(["?"] * len(post_ids))
-            conn.execute(f"DELETE FROM comments WHERE post_id IN ({placeholders})", post_ids)
-        
-        # Delete reactions on user's posts
-        if post_ids:
-            placeholders = ",".join(["?"] * len(post_ids))
-            conn.execute(f"DELETE FROM reactions WHERE target_type = 'post' AND target_id IN ({placeholders})", post_ids)
-        
-        # Delete likes on user's posts
-        if post_ids:
-            placeholders = ",".join(["?"] * len(post_ids))
-            conn.execute(f"DELETE FROM likes WHERE post_id IN ({placeholders})", post_ids)
-        
-        # Delete user's posts
-        conn.execute("DELETE FROM posts WHERE user_id = ?", (user_id,))
-        
-        # Delete user's comments on other posts
-        conn.execute("DELETE FROM comments WHERE user_id = ?", (user_id,))
-        
-        # Delete user's submissions
-        conn.execute("DELETE FROM submissions WHERE user_id = ?", (user_id,))
-        
-        # Delete the user account (notifications and reports will cascade)
-        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
-        
-        conn.commit()
-        
-        # Clean up uploaded files
-        for file_url in files_to_delete:
-            try:
-                file_path = os.path.join(app.root_path, file_url.lstrip("/"))
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            except OSError as e:
-                print(f"Error deleting file {file_url}: {e}")
-        
-        return jsonify({"ok": True})
-    finally:
-        conn.close()
+    return jsonify({"error": "Self-service account deletion is disabled."}), 403
 
 
 @app.route("/api/users/<int:user_id>/profile", methods=["PUT"])
@@ -1164,17 +1067,27 @@ def update_profile(user_id):
 
     conn = get_conn()
     try:
-        if not conn.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone():
+        user_row = conn.execute(
+            "SELECT id, display_name, display_name_changed FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        if not user_row:
             return jsonify({"error": "User not found."}), 404
+        if "display_name" in updates and updates["display_name"] != user_row["display_name"]:
+            if user_row["display_name_changed"]:
+                return jsonify({"error": "You have already used your one display name change."}), 403
+            updates["display_name_changed"] = 1
         set_clause = ", ".join([f"{key} = ?" for key in updates.keys()])
         params = list(updates.values()) + [user_id]
         conn.execute(f"UPDATE users SET {set_clause} WHERE id = ?", params)
         conn.commit()
         user = conn.execute(
-            "SELECT id, email, display_name, photo_url, created_at FROM users WHERE id = ?",
+            "SELECT id, email, display_name, photo_url, display_name_changed, created_at FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
-        return jsonify({"user": json_row(user)})
+        user_data = json_row(user)
+        user_data["display_name_changed"] = bool(user_data.get("display_name_changed"))
+        return jsonify({"user": user_data})
     finally:
         conn.close()
 
@@ -1213,10 +1126,12 @@ def upload_profile_photo(user_id):
         )
         conn.commit()
         user = conn.execute(
-            "SELECT id, email, display_name, photo_url, created_at FROM users WHERE id = ?",
+            "SELECT id, email, display_name, photo_url, display_name_changed, created_at FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
-        return jsonify({"user": json_row(user)})
+        user_data = json_row(user)
+        user_data["display_name_changed"] = bool(user_data.get("display_name_changed"))
+        return jsonify({"user": user_data})
     finally:
         conn.close()
 
@@ -1849,7 +1764,7 @@ def get_public_profile(user_id):
     try:
         user = conn.execute(
             """
-            SELECT id, display_name, photo_url, created_at
+            SELECT id, display_name, photo_url, display_name_changed, created_at
             FROM users WHERE id = ?
             """,
             (user_id,),
@@ -1882,8 +1797,10 @@ def get_public_profile(user_id):
             """,
             params,
         ).fetchall()
+        user_data = json_row(user)
+        user_data["display_name_changed"] = bool(user_data.get("display_name_changed"))
         return jsonify(
-            {"user": json_row(user), "posts": [json_row(post) for post in posts]}
+            {"user": user_data, "posts": [json_row(post) for post in posts]}
         )
     finally:
         conn.close()
@@ -2772,17 +2689,18 @@ def admin_list_reports():
             target_type, target_id = key
             if target_type == "post":
                 content_row = conn.execute(
-                    "SELECT content FROM posts WHERE id = ?", (target_id,)
+                    "SELECT content, id AS post_id FROM posts WHERE id = ?", (target_id,)
                 ).fetchone()
             else:
                 content_row = conn.execute(
-                    "SELECT content FROM comments WHERE id = ?", (target_id,)
+                    "SELECT content, post_id FROM comments WHERE id = ?", (target_id,)
                 ).fetchone()
             if content_row:
                 import re
                 plain = re.sub(r'<[^>]+>', '', content_row["content"] or '')
                 plain = re.sub(r'\s+', ' ', plain).strip()
                 group["target_content_preview"] = plain[:200]
+                group["target_post_id"] = content_row["post_id"]
                 group["target_deleted"] = False
             else:
                 group["target_content_preview"] = None

@@ -620,29 +620,15 @@
 
   // Edit profile modal
   function openEditProfileModal(user) {
-    var NAME_COOLDOWN_KEY = 'ub_name_changed_at';
     var overlay = document.createElement('div');
     overlay.className = 'action-modal';
     overlay.setAttribute('aria-hidden', 'false');
 
-    // Check name cooldown
-    var canChangeName = true;
-    var nameNextAllowed = null;
-    try {
-      var lastChanged = localStorage.getItem(NAME_COOLDOWN_KEY);
-      if (lastChanged) {
-        var diff = Date.now() - Number(lastChanged);
-        var week = 7 * 24 * 60 * 60 * 1000;
-        if (diff < week) {
-          canChangeName = false;
-          nameNextAllowed = new Date(Number(lastChanged) + week);
-        }
-      }
-    } catch (e) {}
+    var canChangeName = !user.display_name_changed;
 
     var nameHint = canChangeName
-      ? '<p class="ep-hint">You can change your name once per week.</p>'
-      : '<p class="ep-hint ep-hint--locked">🔒 Name locked until ' + (nameNextAllowed ? nameNextAllowed.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '') + '</p>';
+      ? '<p class="ep-hint">You can change your display name one time.</p>'
+      : '<p class="ep-hint ep-hint--locked">Display name change already used.</p>';
 
     overlay.innerHTML =
       '<div class="ep-modal-card">' +
@@ -734,10 +720,11 @@
       namePromise.then(function (res) {
         if (res && res.user) {
           currentUser.display_name = res.user.display_name;
-          try { localStorage.setItem(NAME_COOLDOWN_KEY, String(Date.now())); } catch (e) {}
+          currentUser.display_name_changed = !!res.user.display_name_changed;
           try {
             var sess = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
             sess.display_name = res.user.display_name;
+            sess.display_name_changed = !!res.user.display_name_changed;
             sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sess));
           } catch (e) {}
         }
@@ -747,7 +734,7 @@
           return api('/api/users/' + user.id + '/profile', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ display_name: newName || user.display_name, photo_url: selectedDefaultUrl })
+            body: JSON.stringify({ photo_url: selectedDefaultUrl })
           });
         }
 
@@ -799,36 +786,8 @@
     if (ownActions && currentUser && currentUser.user_id === user.id) {
       ownActions.classList.remove('hidden');
       ownActions.innerHTML =
-        '<button type="button" id="btn-edit-profile" class="btn-sm" style="margin-top:0.5rem;">✏️ Edit Profile</button>' +
-        '<button type="button" id="btn-delete-account" class="btn-sm" style="margin-top:0.5rem;margin-left:0.5rem;background:#b00020;color:#fff;border-color:#b00020;">🗑 Delete Account</button>';
+        '<button type="button" id="btn-edit-profile" class="btn-sm" style="margin-top:0.5rem;">✏️ Edit Profile</button>';
       document.getElementById('btn-edit-profile').addEventListener('click', function () { openEditProfileModal(user); });
-      document.getElementById('btn-delete-account').addEventListener('click', function () {
-        openActionModal({
-          title: 'Delete Account',
-          message: 'This will permanently delete your account and all your posts. This cannot be undone. Type DELETE to confirm.',
-          showInput: true,
-          confirmText: 'Delete My Account',
-          danger: true,
-          onConfirm: function (ctx) {
-            if (ctx.value !== 'DELETE') {
-              ctx.setError('Please type DELETE to confirm.');
-              return;
-            }
-            fetch('/api/users/' + currentUser.user_id + '/delete-account', {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ user_id: currentUser.user_id })
-            })
-              .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.statusText); return j; }); })
-              .then(function () {
-                ctx.close();
-                try { sessionStorage.removeItem('ub_session'); } catch (e) {}
-                window.location.href = '/';
-              })
-              .catch(function (e) { ctx.setError(e.message || 'Could not delete account.'); });
-          }
-        });
-      });
     }
   }
 
